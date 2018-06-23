@@ -116,7 +116,16 @@ class GpkgManager(object):
         print out
         return out, err
 
-    def layer_to_postgis(self, layername, connectionString, options=None):
+    def layer_to_postgis(self, layername, connectionString, overwrite=True,
+                         temporary=False):
+        source = self.open_source(connectionString, is_postgres=True)
+        layer = self.source.GetLayerByName(layername)
+        assert layer
+        source.CopyLayer(layer, layer.GetName(), [
+                         'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
+                         'TEMPORARY={}'.format("OFF" if not temporary else "ON")])
+
+    def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
             self.path, connectionString, layername,
             options=options if options else POSTGIS_OPTIONS._asdict())
