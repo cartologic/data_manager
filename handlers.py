@@ -133,20 +133,9 @@ class GpkgManager(object):
         if not err:
             print "{} Added Successfully".format(layername)
 
-    # def as_gpkg(self):
-    #     ds = ogr.GetDriverByName('GPKG').CreateDataSource(
-    #         '/Users/hishamkaram/Projects-Active/cartoview_project/gdal_sample.gpkg')
-    #     layers = self.read_layers()
-    #     for lyr in layers:
-    #         ds.CopyLayer(lyr, lyr.GetName())
-    #         # pprint.pprint(lyr.GetName())
-    #         # dest_layer = ds.CreateLayer(lyr.GetName(),
-    #         #                             srs=lyr.GetSpatialRef(),
-    #         #                             geom_type=lyr.GetLayerDefn().GetGeomType())
-    #         # feature = lyr.GetFeature(0)
-    #         # for i in range(feature.GetFieldCount()):
-    #         #     dest_layer.CreateField(feature.GetFieldDefnRef(i))
-    #         # lyr.ResetReading()
-    #         # for feature in lyr:
-    #         #     pprint.pprint(feature.GetFID())
-    #         #     dest_layer.CreateFeature(feature)
+    def postgis_as_gpkg(self, connectionString, dest_path):
+        postgis_source = self.open_source(connectionString, is_postgres=True)
+        ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
+        layers = self.get_source_layers(postgis_source)
+        for lyr in layers:
+            ds.CopyLayer(lyr.gpkg_layer, lyr.gpkg_layer.GetName())
