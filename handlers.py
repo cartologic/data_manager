@@ -93,7 +93,7 @@ class GpkgManager(object):
         return self.get_layers_features(self.get_layers())
 
     def _cmd_lyr_postgis(self, gpkg_path, connectionString, layername,
-                         options=POSTGIS_OPTIONS):
+                         options=POSTGIS_OPTIONS._asdict()):
 
         overwrite = options.get('overwrite', POSTGIS_OPTIONS.overwrite)
         skipfailures = options.get(
