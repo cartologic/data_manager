@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 from osgeo import ogr
-import pprint
 import pipes
 import subprocess
-
-DEFAULT_OPTIONS = {
-    'skipfailures': True,
-    'overwrite': True,
-    'append': False,
-    'update': False
-}
+from collections import namedtuple
+LayerPostgisOptions = namedtuple(
+    'LayerPostgisOptions', ['skipfailures', 'overwrite', 'append', 'update'])
+POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
 
 
 class GpkgLayer(object):
@@ -97,12 +93,12 @@ class GpkgManager(object):
         return self.get_layers_features(self.get_layers())
 
     def cmd_lyr_postgis(self, gpkg_path, connectionString, layername,
-                        options=DEFAULT_OPTIONS):
-        overwrite = options.get('overwrite', DEFAULT_OPTIONS.get('overwrite'))
+                        options=POSTGIS_OPTIONS):
+        overwrite = options.get('overwrite', POSTGIS_OPTIONS.overwrite)
         skipfailures = options.get(
-            'skipfailures', DEFAULT_OPTIONS.get('skipfailures'))
-        append_layer = options.get('append', DEFAULT_OPTIONS.get('append'))
-        update_layer = options.get('update', DEFAULT_OPTIONS.get('update'))
+            'skipfailures', POSTGIS_OPTIONS.skipfailures)
+        append_layer = options.get('append', POSTGIS_OPTIONS.append)
+        update_layer = options.get('update', POSTGIS_OPTIONS.update)
         command = """ogr2ogr {} {} {} -f "PostgreSQL" PG:"{}" {} {}  {} """\
             .format("-overwrite" if overwrite else "",
                     "-update" if update_layer else "",
@@ -145,6 +141,3 @@ class GpkgManager(object):
     #         # for feature in lyr:
     #         #     pprint.pprint(feature.GetFID())
     #         #     dest_layer.CreateFeature(feature)
-
-
-
