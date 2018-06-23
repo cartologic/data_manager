@@ -5,6 +5,7 @@ import subprocess
 from collections import namedtuple
 from sys import stdout
 import logging
+
 formatter = logging.Formatter(
     '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
                             %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
@@ -141,9 +142,11 @@ class GpkgManager(object):
         if not err:
             logger.warning("{} Added Successfully".format(layername))
 
-    def postgis_as_gpkg(self, connectionString, dest_path):
+    def postgis_as_gpkg(self, connectionString, dest_path, layernames=None):
         postgis_source = self.open_source(connectionString, is_postgres=True)
         ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
-        layers = self.get_source_layers(postgis_source)
+        layers = self.get_source_layers(postgis_source) if not layernames \
+            else [layer for layer in self.get_source_layers(postgis_source)
+                  if layer.gpkg_layer.GetName() in layernames]
         for lyr in layers:
             ds.CopyLayer(lyr.gpkg_layer, lyr.gpkg_layer.GetName())
