@@ -147,23 +147,4 @@ class GpkgManager(object):
     #         #     dest_layer.CreateFeature(feature)
 
 
-single = GpkgManager('/Users/hishamkaram/Projects-Active/one_layer.gpkg')
-multi = GpkgManager(
-    '/Users/hishamkaram/Projects-Active/three_layers_scemd.gpkg')
-# print("Single===============================\n")
-# pprint.pprint(single.read_source_schema())
-# print("Multiple===============================\n")
-# pprint.pprint(multi.read_source_schema())
-print("===============================Package Layers==========================")
-pprint.pprint(multi.get_layernames())
-print("===============================END==========================")
-# pprint.pprint(multi.get_features().next())
-# x = PostgisHandler('127.0.0.1', 'cartoview_datastore', 'hishamkaram', 'clogic')
-# pprint.pprint(x.read_layers())
-# x.as_gpkg()
-# /Library/Frameworks/GDAL.framework/Versions/2.1/Programs/ogr2ogr -overwrite -f "PostgreSQL" PG:"host=127.0.0.1 user=hishamkaram password=clogic dbname=cartoview_datastore"  ../three_layers_scemd.gpkg  -skipfailures -clipsrclayer three_layers_scemd
-# /Library/Frameworks/GDAL.framework/Versions/1.11/Python/2.7/site-packages/osgeo
-print("===============================Starting upload layer to postgis==========================")
-multi.layer_to_postgis("scemd_example_data quakes_1776_2008",
-                       GpkgManager.build_connection_string('127.0.0.1', 'cartoview_datastore', 'hishamkaram', 'clogic'))
-print("===============================END==========================")
+
