@@ -3,6 +3,15 @@ from osgeo import ogr
 import pipes
 import subprocess
 from collections import namedtuple
+from sys import stdout
+import logging
+formatter = logging.Formatter(
+    '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
+                            %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 LayerPostgisOptions = namedtuple(
     'LayerPostgisOptions', ['skipfailures', 'overwrite', 'append', 'update'])
 POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
@@ -113,7 +122,6 @@ class GpkgManager(object):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        print out
         return out, err
 
     def layer_to_postgis(self, layername, connectionString, overwrite=True,
@@ -131,7 +139,7 @@ class GpkgManager(object):
             options=options if options else POSTGIS_OPTIONS._asdict())
         out, err = self.execute(cmd)
         if not err:
-            print "{} Added Successfully".format(layername)
+            logger.warning("{} Added Successfully".format(layername))
 
     def postgis_as_gpkg(self, connectionString, dest_path):
         postgis_source = self.open_source(connectionString, is_postgres=True)
