@@ -92,8 +92,9 @@ class GpkgManager(object):
     def get_features(self):
         return self.get_layers_features(self.get_layers())
 
-    def cmd_lyr_postgis(self, gpkg_path, connectionString, layername,
-                        options=POSTGIS_OPTIONS):
+    def _cmd_lyr_postgis(self, gpkg_path, connectionString, layername,
+                         options=POSTGIS_OPTIONS):
+
         overwrite = options.get('overwrite', POSTGIS_OPTIONS.overwrite)
         skipfailures = options.get(
             'skipfailures', POSTGIS_OPTIONS.skipfailures)
@@ -115,11 +116,10 @@ class GpkgManager(object):
         print out
         return out, err
 
-    def layer_to_postgis(self, layername, connectionString):
-        options = DEFAULT_OPTIONS.copy()
-        options.update({'append': True})
-        cmd = self.cmd_lyr_postgis(
-            self.path, connectionString, layername, options=options)
+    def layer_to_postgis(self, layername, connectionString, options=None):
+        cmd = self._cmd_lyr_postgis(
+            self.path, connectionString, layername,
+            options=options if options else POSTGIS_OPTIONS._asdict())
         out, err = self.execute(cmd)
         if not err:
             print "{} Added Successfully".format(layername)
