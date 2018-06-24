@@ -21,6 +21,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # TODO: check if dest is a directory and writable
         dest_dir = options.get('destination')
         file_suff = time.strftime("%Y_%m_%d-%H_%M_%S")
         package_dir = os.path.join(dest_dir, "backup_%s.gpkg" % (file_suff))
