@@ -6,7 +6,8 @@ from .models import GpkgUpload
 from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .handlers import GpkgManager
-from .utils import get_connection
+from .utils import (get_connection, DEFAULT_WORKSPACE,
+                    get_gs_store, gs_catalog)
 
 
 @login_required
@@ -18,7 +19,7 @@ def upload(request):
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
-            # TODO:redirect to list of user uploads
+            return redirect('gpkg_manager.views.list_uploads')
     return render(request, "gpkg_manager/upload.html", context={'form': form})
 
 
@@ -40,12 +41,19 @@ def publish_layer(request, upload_id, layername):
         layer = manager.get_layer_by_name(layername)
         conn = get_connection()
         pg_source = GpkgManager.open_source(conn, is_postgres=True)
+        gs_pub = GeoserverPublisher()
+        geonode_pub = GeonodePublisher()
+        expected_name = DEFAULT_WORKSPACE+":"+layername
         if not layer.is_geonode_layer:
+            # check if layer not in postgres the add it and publish
             if not pg_source.GetLayerByName(layername):
                 manager.layer_to_postgis_cmd(layername, conn)
-                gs_pub = GeoserverPublisher()
                 gs_pub.publish_postgis_layer(layername)
-            geonode_pub = GeonodePublisher()
+            # check if layer not in geoserver
+            elif not gs_catalog.get_resource(expected_name,
+                                             store=get_gs_store(),
+                                             workspace=DEFAULT_WORKSPACE):
+                gs_pub.publish_postgis_layer(layername)
             layer = geonode_pub.publish(layername)
             if layer:
                 return redirect('geonode.layers.views.layer_detail',
