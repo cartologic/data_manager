@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from requests.auth import HTTPBasicAuth
 import requests
 from django.conf import settings
