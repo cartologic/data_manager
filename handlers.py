@@ -43,6 +43,9 @@ class GpkgLayer(object):
             return True
         return False
 
+    @property
+    def name(self):
+        return self.gpkg_layer.GetName()
     def get_projection(self):
         # self.gpkg_layer.GetSpatialRef().ExportToProj4()
         return self.gpkg_layer.GetSpatialRef().GetAttrValue('projcs')
@@ -102,7 +105,7 @@ class GpkgManager(object):
 
     @staticmethod
     def get_source_layers(source):
-        return [GpkgLayer(layer) for layer in source]
+        return [GpkgLayer(layer, source) for layer in source]
 
     def get_layers(self):
         return self.get_source_layers(self.source)
@@ -177,6 +180,6 @@ class GpkgManager(object):
             if not layernames \
             else [layer for layer in
                   GpkgManager.get_source_layers(postgis_source)
-                  if layer.gpkg_layer.GetName() in layernames]
+                  if layer.name in layernames]
         for lyr in layers:
-            ds.CopyLayer(lyr.gpkg_layer, lyr.gpkg_layer.GetName())
+            ds.CopyLayer(lyr.gpkg_layer, lyr.name)
