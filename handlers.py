@@ -47,6 +47,9 @@ class GpkgLayer(object):
     def name(self):
         return self.gpkg_layer.GetName()
 
+    def delete(self):
+        self.source.DeleteLayer(self.name)
+
     def copy_to_source(self, dest_source, overwrite=True,
                        temporary=False):
         if dest_source:
