@@ -82,6 +82,16 @@ class GpkgManager(object):
         return self.source
 
     @staticmethod
+    def source_layer_exists(source, layername):
+        layer = source.GetLayerByName(layername)
+        if layer:
+            return True
+        return False
+
+    def layer_exists(self, layername):
+        return GpkgManager.source_layer_exists(self.source, layername)
+
+    @staticmethod
     def get_source_layers(source):
         return [GpkgLayer(layer) for layer in source]
 
