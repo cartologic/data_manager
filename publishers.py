@@ -18,7 +18,7 @@ class GeoserverPublisher(object):
         self.username = geoserver_user.get(
             'username', ogc_server_settings.credentials[0])
         self.password = geoserver_user.get(
-            'username', ogc_server_settings.credentials[1])
+            'password', ogc_server_settings.credentials[1])
 
     @property
     def featureTypes_url(self):
