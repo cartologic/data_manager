@@ -46,6 +46,14 @@ class GpkgLayer(object):
     @property
     def name(self):
         return self.gpkg_layer.GetName()
+
+    def copy_to_source(self, dest_source, overwrite=True,
+                       temporary=False):
+        if dest_source:
+            dest_source.CopyLayer(self.gpkg_layer, self.name, [
+                'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
+                'TEMPORARY={}'.format("OFF" if not temporary else "ON")])
+
     def get_projection(self):
         # self.gpkg_layer.GetSpatialRef().ExportToProj4()
         return self.gpkg_layer.GetSpatialRef().GetAttrValue('projcs')
