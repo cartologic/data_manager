@@ -1,7 +1,26 @@
 from requests.auth import HTTPBasicAuth
-from geonode.geoserver.helpers import ogc_server_settings
 import requests
 from django.conf import settings
+from decimal import Decimal
+from geonode.layers.models import Layer
+from geonode.security.views import _perms_info_json
+from geonode.geoserver.helpers import (
+    gs_catalog, get_store, ogc_server_settings, set_attributes_from_geoserver)
+from geonode.people.models import Profile
+import json
+import sys
+from sys import stdout
+from django.utils.translation import ugettext as _
+import logging
+import uuid
+
+formatter = logging.Formatter(
+    '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
+                            %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stdout)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
@@ -34,8 +53,69 @@ class GeoserverPublisher(object):
                                 json={"featureType": {"name": layername,
                                                       "nativeName": layername}
                                       })
-            if req.status_code == 200:
+            if req.status_code == 201:
                 return True
         return False
 
-# TODO: GeonodePublisher
+
+class GeonodePublisher(object):
+    def __init__(self,
+                 storename=ogc_server_settings.datastore_db['NAME'],
+                 workspace=DEFAULT_WORKSPACE,
+                 owner=Profile.objects.filter(is_superuser=True).first()):
+        self.store = get_store(
+            gs_catalog, storename, workspace)
+        self.storename = storename
+        self.workspace = workspace
+        self.owner = owner
+
+    def publish(self, layername):
+        resource = gs_catalog.get_resource(
+            layername, store=self.store, workspace=self.workspace)
+        assert resource
+        name = resource.name
+        the_store = resource.store
+        workspace = the_store.workspace
+        try:
+            layer, created = Layer.objects.get_or_create(name=name,
+                                                         workspace=workspace.name, defaults={
+                                                             # "workspace": workspace.name,
+                                                             "store": the_store.name,
+                                                             "storeType": the_store.resource_type,
+                                                             "alternate": "%s:%s" % (workspace.name.encode('utf-8'), resource.name.encode('utf-8')),
+                                                             "title": resource.title or 'No title provided',
+                                                             "abstract": resource.abstract or unicode(_('No abstract provided')).encode('utf-8'),
+                                                             "owner": self.owner,
+                                                             "uuid": str(uuid.uuid4()),
+                                                             "bbox_x0": Decimal(resource.native_bbox[0]),
+                                                             "bbox_x1": Decimal(resource.native_bbox[1]),
+                                                             "bbox_y0": Decimal(resource.native_bbox[2]),
+                                                             "bbox_y1": Decimal(resource.native_bbox[3]),
+                                                             "srid": resource.projection
+                                                         })
+
+            # sync permissions in GeoFence
+            perm_spec = json.loads(_perms_info_json(layer))
+            layer.set_permissions(perm_spec)
+
+            # recalculate the layer statistics
+            set_attributes_from_geoserver(layer, overwrite=True)
+            layer.save()
+
+            # Fix metadata links if the ip has changed
+            if layer.link_set.metadata().count() > 0:
+                if not created and settings.SITEURL \
+                        not in layer.link_set.metadata()[0].url:
+                    layer.link_set.metadata().delete()
+                    layer.save()
+                    metadata_links = []
+                    for link in layer.link_set.metadata():
+                        metadata_links.append((link.mime, link.name, link.url))
+                    resource.metadata_links = metadata_links
+                    gs_catalog.save(resource)
+
+        except Exception as e:
+            logger.error(e.message)
+            exception_type, error, traceback = sys.exc_info()
+        else:
+            layer.set_default_permissions()
