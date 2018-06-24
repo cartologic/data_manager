@@ -1,7 +1,9 @@
-from geonode.geoserver.helpers import (
-    gs_catalog, get_store, ogc_server_settings)
 from django.conf import settings
 from .handlers import GpkgManager
+from geonode.geoserver.helpers import (
+    gs_catalog, get_store, ogc_server_settings)
+
+DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
 
 def get_connection():
@@ -16,3 +18,9 @@ def get_connection():
     port = store.connection_parameters['port']
     return GpkgManager.build_connection_string(
         host, db_name, user, password, int(port) if port else 5432)
+
+
+def get_gs_store(storename=ogc_server_settings.datastore_db['NAME'],
+                 workspace=DEFAULT_WORKSPACE):
+    return get_store(
+        gs_catalog, storename, workspace)
