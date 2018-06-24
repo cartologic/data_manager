@@ -6,6 +6,7 @@ except:
 import pipes
 import subprocess
 from collections import namedtuple
+from geonode.layers.models import Layer
 from sys import stdout
 import logging
 
@@ -33,6 +34,13 @@ class GpkgLayer(object):
                  self.layer_defn.GetFieldDefn(i).GetTypeName(),
                  self.layer_defn.GetFieldDefn(i).GetType())
                 for i in range(self.layer_defn.GetFieldCount())]
+
+    @property
+    def is_geonode_layer(self):
+        layername = self.gpkg_layer.GetName()
+        if Layer.objects.filter(typename__contains=layername).count() > 0:
+            return True
+        return False
 
     def get_projection(self):
         # self.gpkg_layer.GetSpatialRef().ExportToProj4()
