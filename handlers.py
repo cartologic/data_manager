@@ -23,11 +23,12 @@ POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
 
 
 class GpkgLayer(object):
-    def __init__(self, layer):
+    def __init__(self, layer, source):
         self.gpkg_layer = layer
         self.name = self.gpkg_layer.GetName()
         self.layer_defn = self.gpkg_layer.GetLayerDefn()
         self.geometry_type = self.gpkg_layer.GetGeomType()
+        self.source = source
 
     def get_schema(self):
         return [(self.layer_defn.GetFieldDefn(i).GetName(),
