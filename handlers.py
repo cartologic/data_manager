@@ -159,11 +159,15 @@ class GpkgManager(object):
         if not err:
             logger.warning("{} Added Successfully".format(layername))
 
-    def postgis_as_gpkg(self, connectionString, dest_path, layernames=None):
-        postgis_source = self.open_source(connectionString, is_postgres=True)
+    @staticmethod
+    def postgis_as_gpkg(connectionString, dest_path, layernames=None):
+        postgis_source = GpkgManager.open_source(
+            connectionString, is_postgres=True)
         ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
-        layers = self.get_source_layers(postgis_source) if not layernames \
-            else [layer for layer in self.get_source_layers(postgis_source)
+        layers = GpkgManager.get_source_layers(postgis_source) \
+            if not layernames \
+            else [layer for layer in
+                  GpkgManager.get_source_layers(postgis_source)
                   if layer.gpkg_layer.GetName() in layernames]
         for lyr in layers:
             ds.CopyLayer(lyr.gpkg_layer, lyr.gpkg_layer.GetName())
