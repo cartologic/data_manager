@@ -120,3 +120,4 @@ class GeonodePublisher(object):
             exception_type, error, traceback = sys.exc_info()
         else:
             layer.set_default_permissions()
+            return layer

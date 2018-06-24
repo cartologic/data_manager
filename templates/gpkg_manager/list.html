@@ -1,0 +1,28 @@
+{% extends "app_manager/app_install_base.html" %}
+{% load bootstrap_tags staticfiles %}
+{% load i18n %}
+
+{% block title %} {{ block.super }} - {% trans "GeoPackage Manager - {{request.user.username}}" %} {% endblock %}
+{% block head %}
+    {{ block.super }}
+{% endblock %}
+{% block body %}
+    <div id="page-wrapper">
+        <div class="container-fluid" >
+            <h1>Your Uploads</h1>
+            <br>
+            {% for upload in uploads  %}
+            <h3>{{upload.package.name}}</h3>
+            <ul>
+                {% for layer in upload.gpkg_manager.get_layers %}
+                <li>{{layer.name}} <a href="{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}">publish</a></li>
+                {% endfor %}
+            </ul>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}
+{% block extra_script %}
+  
+ {% endblock %}

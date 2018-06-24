@@ -25,7 +25,6 @@ POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
 class GpkgLayer(object):
     def __init__(self, layer, source):
         self.gpkg_layer = layer
-        self.name = self.gpkg_layer.GetName()
         self.layer_defn = self.gpkg_layer.GetLayerDefn()
         self.geometry_type = self.gpkg_layer.GetGeomType()
         self.source = source
@@ -39,7 +38,7 @@ class GpkgLayer(object):
     @property
     def is_geonode_layer(self):
         layername = self.gpkg_layer.GetName()
-        if Layer.objects.filter(typename__contains=layername).count() > 0:
+        if Layer.objects.filter(alternate__contains=layername).count() > 0:
             return True
         return False
 
@@ -90,7 +89,8 @@ class GpkgManager(object):
         self.get_source()
 
     @staticmethod
-    def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass, DB_Port=5432):
+    def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass,
+                                DB_Port=5432):
         connectionString = "host=%s port=%d dbname=%s user=%s password=%s" % (
             DB_server, DB_Port, DB_Name, DB_user, DB_Pass)
         return connectionString
@@ -123,6 +123,12 @@ class GpkgManager(object):
 
     def get_layernames(self):
         return tuple(layer.name for layer in self.get_layers())
+
+    def get_layer_by_name(self, layername):
+        if self.layer_exists(layername):
+            return GpkgLayer(self.source.GetLayerByName(layername),
+                             self.source)
+        return None
 
     @staticmethod
     def read_source_schema(source):
@@ -172,7 +178,8 @@ class GpkgManager(object):
         assert layer
         source.CopyLayer(layer, layer.GetName(), [
                          'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-                         'TEMPORARY={}'.format("OFF" if not temporary else "ON")])
+                         'TEMPORARY={}'
+                         .format("OFF" if not temporary else "ON")])
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(

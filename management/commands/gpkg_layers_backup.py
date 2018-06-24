@@ -10,6 +10,7 @@ import os
 import time
 import sys
 import multiprocessing
+from gpkg_manager.utils import get_connection
 backup_process = None
 
 
@@ -30,18 +31,7 @@ class Command(BaseCommand):
         dest_dir = options.get('destination')
         file_suff = time.strftime("%Y_%m_%d-%H_%M_%S")
         package_dir = os.path.join(dest_dir, "backup_%s.gpkg" % (file_suff))
-
-        storename = ogc_server_settings.datastore_db['NAME']
-        store = get_store(
-            gs_catalog, storename, settings.DEFAULT_WORKSPACE)
-        db = ogc_server_settings.datastore_db
-        db_name = store.connection_parameters['database']
-        user = db['USER']
-        password = db['PASSWORD']
-        host = store.connection_parameters['host']
-        port = store.connection_parameters['port']
-        connection_string = GpkgManager.build_connection_string(
-            host, db_name, user, password, int(port) if port else 5432)
+        connection_string = get_connection()
         try:
             if not os.path.isdir(dest_dir) or not os.access(dest_dir, os.W_OK):
                 raise Exception(

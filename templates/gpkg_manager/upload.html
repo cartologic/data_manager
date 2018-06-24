@@ -1,0 +1,25 @@
+{% extends "app_manager/app_install_base.html" %}
+{% load bootstrap_tags staticfiles %}
+{% load i18n %}
+
+{% block title %} {{ block.super }} - {% trans "GeoPackage Manager" %} {% endblock %}
+{% block head %}
+    {{ block.super }}
+{% endblock %}
+{% block body %}
+    <div id="page-wrapper">
+        <div class="container-fluid" >
+            <h1>GeoPackage Uploader</h1>
+            <br>
+            <form action="{% url 'geopackage_upload' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{form.as_p}}
+                <button class="btn btn-primary" type="submit" value="Submit">Upload</button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+{% block extra_script %}
+  
+ {% endblock %}

@@ -1,3 +1,8 @@
 from django import forms
+from .models import GpkgUpload
 
-# place form definition here
+
+class GpkgUploadForm(forms.ModelForm):
+    class Meta:
+        model = GpkgUpload
+        fields = ['package', ]
