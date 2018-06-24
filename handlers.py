@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-from osgeo import ogr
+try:
+    import ogr
+except:
+    from osgeo import ogr
 import pipes
 import subprocess
 from collections import namedtuple
