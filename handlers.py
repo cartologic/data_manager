@@ -67,9 +67,9 @@ class GpkgManager(object):
         self.get_source()
 
     @staticmethod
-    def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass):
-        connectionString = "host=%s dbname=%s user=%s password=%s" % (
-            DB_server, DB_Name, DB_user, DB_Pass)
+    def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass, DB_Port=5432):
+        connectionString = "host=%s port=%d dbname=%s user=%s password=%s" % (
+            DB_server, DB_Port, DB_Name, DB_user, DB_Pass)
         return connectionString
 
     @staticmethod
