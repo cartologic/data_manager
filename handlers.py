@@ -74,7 +74,8 @@ class GpkgManager(object):
             DB_server, DB_Name, DB_user, DB_Pass)
         return connectionString
 
-    def open_source(self, source_path, is_postgres=False):
+    @staticmethod
+    def open_source(source_path, is_postgres=False):
         full_path = "PG: "+source_path if is_postgres else source_path
         return ogr.Open(full_path)
 
@@ -82,7 +83,8 @@ class GpkgManager(object):
         self.source = self.open_source(self.path)
         return self.source
 
-    def get_source_layers(self, source):
+    @staticmethod
+    def get_source_layers(source):
         return [GpkgLayer(layer) for layer in source]
 
     def get_layers(self):
@@ -91,8 +93,9 @@ class GpkgManager(object):
     def get_layernames(self):
         return tuple(layer.name for layer in self.get_layers())
 
-    def read_source_schema(self, source):
-        layers = self.get_source_layers(source)
+    @staticmethod
+    def read_source_schema(source):
+        layers = GpkgManager.get_source_layers(source)
         return tuple((layer.name, layer.get_schema() +
                       layer.geometry_fields_schema())
                      for layer in layers)
@@ -100,7 +103,8 @@ class GpkgManager(object):
     def read_schema(self):
         return self.read_source_schema(self.source)
 
-    def get_layers_features(self, layers):
+    @staticmethod
+    def get_layers_features(layers):
         for lyr in layers:
             yield lyr.get_features()
 
