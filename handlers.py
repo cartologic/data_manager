@@ -272,7 +272,7 @@ class StyleManager(object):
     def get_styles(self):
         with self.db_session() as session:
             cursor = session.cursor()
-            cursor.execute('select * from ?', (styles_table_name,))
+            cursor.execute('select * from ?', (self.styles_table_name,))
             rows = cursor.fetchall()
             styles = [self.from_row(row) for row in rows]
             return styles
@@ -319,3 +319,4 @@ class StyleManager(object):
                  sld_body, default))
             session.commit()
             return cursor.cursor
+    # TODO: add_styles with executemany
