@@ -8,8 +8,13 @@ import subprocess
 from collections import namedtuple
 from geonode.layers.models import Layer
 from sys import stdout
+from contextlib import contextmanager
 import logging
-
+from .helpers import unicode_converter
+try:
+    import _sqlite3 as sqlite3
+except:
+    import sqlite3
 formatter = logging.Formatter(
     '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
                             %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
@@ -201,3 +206,116 @@ class GpkgManager(object):
                   if layer.name in layernames]
         for lyr in layers:
             ds.CopyLayer(lyr.gpkg_layer, lyr.name)
+
+
+class LayerStyle(object):
+    def __init__(self, *args, **kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+    @staticmethod
+    def get_attribute_names():
+        attrs = []
+        for name in vars(LayerStyle):
+            if name.startswith("__"):
+                continue
+            attr = getattr(LayerStyle, name)
+            if callable(attr):
+                continue
+            attrs.append(name)
+        return attrs
+
+    def as_dict(self):
+        return {attr: getattr(self, attr)
+                for attr in self.get_attribute_names()}
+
+
+class StyleManager(object):
+    styles_table_name = 'layer_styles'
+
+    def __init__(self, gpkg_path):
+        self.db_path = gpkg_path
+
+    @contextmanager
+    def db_session(self, row_factory=True):
+        conn = sqlite3.connect(self.db_path)
+        if row_factory:
+            conn.row_factory = lambda c, r: dict(
+                [(col[0], r[idx]) for idx, col in enumerate(c.description)])
+        yield conn
+        conn.close()
+
+    def table_exists_decorator(failure_result=None):
+        def wrapper(function):
+            def wrapped(*args, **kwargs):
+                this = args[0]
+                if this.check_styles_table_exists():
+                    return function(*args, **kwargs)
+                return failure_result
+            return wrapped
+        return wrapper
+
+    def check_styles_table_exists(self):
+        check = 0
+        with self.db_session(row_factory=False) as session:
+            cursor = session.cursor()
+            cursor.execute(
+                'SELECT count(*) FROM sqlite_master WHERE type="table" AND name= ?', (self.styles_table_name,))
+            check = cursor.fetchone()[0]
+        return check
+
+    @staticmethod
+    def from_row(row):
+        return LayerStyle(**unicode_converter(row))
+
+    @table_exists_decorator(failure_result=[])
+    def get_styles(self):
+        with self.db_session() as session:
+            cursor = session.cursor()
+            cursor.execute('select * from ?', (styles_table_name,))
+            rows = cursor.fetchall()
+            styles = [self.from_row(row) for row in rows]
+            return styles
+
+    def create_table(self):
+        if not self.check_styles_table_exists():
+            with self.db_session() as session:
+                cursor = session.cursor()
+                cursor.execute('''CREATE TABLE ? (
+                                    `id`	INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    `f_table_catalog`	TEXT ( 256 ),
+                                    `f_table_schema`	TEXT ( 256 ),
+                                    `f_table_name`	TEXT ( 256 ),
+                                    `f_geometry_column`	TEXT ( 256 ),
+                                    `styleName`	TEXT ( 30 ),
+                                    `styleQML`	TEXT,
+                                    `styleSLD`	TEXT,
+                                    `useAsDefault`	BOOLEAN,
+                                    `description`	TEXT,
+                                    `owner`	TEXT ( 30 ),
+                                    `ui`	TEXT ( 30 ),
+                                    `update_time`	DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+                                );''', (self.styles_table_name,))
+                session.commit()
+
+    @table_exists_decorator(failure_result=None)
+    def get_style(self, layername):
+        with self.db_session() as session:
+            cursor = session.cursor()
+            cursor.execute(
+                'SELECT * FROM ? WHERE f_table_name=?',
+                (self.styles_table_name, layername))
+            rows = cursor.fetchone()
+            return rows[0] if len(rows) > 0 else None
+
+    @table_exists_decorator(failure_result=None)
+    def add_style(self, layername, geom_field, stylename, sld_body,
+                  default=False):
+        with self.db_session() as session:
+            cursor = session.cursor()
+            cursor.execute(
+                'INSERT INTO ? (f_table_name,f_geometry_column,styleName,styleSLD,useAsDefault) VALUES (?,?,?,?,?);',
+                (self.styles_table_name, layername, geom_field, stylename,
+                 sld_body, default))
+            session.commit()
+            return cursor.cursor

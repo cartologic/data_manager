@@ -2,7 +2,6 @@ from django.conf import settings
 from .handlers import GpkgManager
 from geonode.geoserver.helpers import (
     gs_catalog, get_store, ogc_server_settings)
-
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
 
