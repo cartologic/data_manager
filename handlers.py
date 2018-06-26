@@ -304,10 +304,11 @@ class StyleManager(object):
         with self.db_session() as session:
             cursor = session.cursor()
             cursor.execute(
-                'SELECT * FROM ? WHERE f_table_name=?',
-                (self.styles_table_name, layername))
+                'SELECT * FROM {} WHERE f_table_name=?'.format(
+                    self.styles_table_name),
+                (layername,))
             rows = cursor.fetchone()
-            return rows[0] if len(rows) > 0 else None
+            return LayerStyle(**rows) if len(rows) > 0 else None
 
     @table_exists_decorator(failure_result=None)
     def add_style(self, layername, geom_field, stylename, sld_body,
