@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from .models import GpkgUpload
 from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
-from .handlers import GpkgManager
+from .handlers import GpkgManager, StyleManager
 from .utils import (get_connection, DEFAULT_WORKSPACE,
                     get_gs_store, gs_catalog)
 
@@ -42,10 +42,11 @@ def publish_layer(request, upload_id, layername):
         conn = get_connection()
         pg_source = GpkgManager.open_source(conn, is_postgres=True)
         gs_pub = GeoserverPublisher()
+        stm = StyleManager(upload.package.path)
         geonode_pub = GeonodePublisher()
         expected_name = DEFAULT_WORKSPACE+":"+layername
         if not layer.is_geonode_layer:
-            # check if layer not in postgres the add it and publish
+            # check if layer not in postgres then add it and publish
             if not pg_source.GetLayerByName(layername):
                 manager.layer_to_postgis_cmd(layername, conn)
                 gs_pub.publish_postgis_layer(layername)
@@ -55,6 +56,17 @@ def publish_layer(request, upload_id, layername):
                                              workspace=DEFAULT_WORKSPACE):
                 gs_pub.publish_postgis_layer(layername)
             layer = geonode_pub.publish(layername)
+            gpkg_style = stm.get_style(layername)
+            if gpkg_style:
+                sld_body = gpkg_style.styleSLD
+                name = gpkg_style.styleName
+                # TODO: handle none default styles
+                # useDefault = gpkg_style.useAsDefault
+                style = stm.upload_style(name, sld_body, overwrite=True)
+                stm.set_default_layer_style(layer.alternate, style.name)
+                layer.default_style = style
+                layer.save()
+
             if layer:
                 return redirect('geonode.layers.views.layer_detail',
                                 layer.alternate)

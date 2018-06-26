@@ -11,10 +11,14 @@ from sys import stdout
 from contextlib import contextmanager
 import logging
 from .helpers import unicode_converter
+from django.conf import settings
+from geonode.geoserver.helpers import gs_catalog
 try:
     import _sqlite3 as sqlite3
 except:
     import sqlite3
+from geonode.layers.models import Style
+from time import time
 formatter = logging.Formatter(
     '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
                             %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
