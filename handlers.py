@@ -247,6 +247,31 @@ class StyleManager(object):
         yield conn
         conn.close()
 
+    def upload_style(self, style_name, sld_body, overwrite=False):
+        name = self.get_new_name(style_name)
+        gs_catalog.create_style(name, sld_body, overwrite=overwrite,
+                                raw=True, workspace=settings.DEFAULT_WORKSPACE)
+        style = gs_catalog.get_style(
+            name, workspace=settings.DEFAULT_WORKSPACE)
+        style_url = style.body_href
+        return Style.objects.create(
+            name=name, sld_title=name, sld_body=sld_body,
+            sld_url=style_url)
+
+    def set_default_layer_style(self, layername, stylename):
+        gs_layer = gs_catalog.get_layer(layername)
+        gs_layer.default_style = gs_catalog.get_style(
+            stylename, workspace=settings.DEFAULT_WORKSPACE)
+        gs_catalog.save(gs_layer)
+
+    def get_new_name(self, sld_name):
+        style = gs_catalog.get_style(sld_name)
+        if not style:
+            return sld_name
+        else:
+            timestr = time.strftime("%Y%m%d_%H%M%S")
+            return "{}_{}".format(sld_name, timestr)
+
     def table_exists_decorator(failure_result=None):
         def wrapper(function):
             def wrapped(*args, **kwargs):
