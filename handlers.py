@@ -262,8 +262,10 @@ class StyleManager(object):
         with self.db_session(row_factory=False) as session:
             cursor = session.cursor()
             cursor.execute(
-                'SELECT count(*) FROM sqlite_master WHERE type="table" AND name= ?', (self.styles_table_name,))
-            check = cursor.fetchone()[0]
+                """SELECT count(*) FROM sqlite_master \
+                WHERE type="table" AND name=?""", (self.styles_table_name,))
+            result = cursor.fetchone()
+            check = result[0]
         return check
 
     @staticmethod
@@ -283,7 +285,8 @@ class StyleManager(object):
         if not self.check_styles_table_exists():
             with self.db_session() as session:
                 cursor = session.cursor()
-                cursor.execute('''CREATE TABLE ? (
+                cursor.execute('''
+                CREATE TABLE {} (
                                     `id`	INTEGER PRIMARY KEY AUTOINCREMENT,
                                     `f_table_catalog`	TEXT ( 256 ),
                                     `f_table_schema`	TEXT ( 256 ),
@@ -297,7 +300,7 @@ class StyleManager(object):
                                     `owner`	TEXT ( 30 ),
                                     `ui`	TEXT ( 30 ),
                                     `update_time`	DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-                                );''', (self.styles_table_name,))
+                                );'''.format(self.styles_table_name))
                 session.commit()
 
     @table_exists_decorator(failure_result=None)
@@ -317,9 +320,10 @@ class StyleManager(object):
         with self.db_session() as session:
             cursor = session.cursor()
             cursor.execute(
-                'INSERT INTO ? (f_table_name,f_geometry_column,styleName,styleSLD,useAsDefault) VALUES (?,?,?,?,?);',
-                (self.styles_table_name, layername, geom_field, stylename,
+                'INSERT INTO {} (f_table_name,f_geometry_column,styleName,styleSLD,useAsDefault) VALUES (?,?,?,?,?);'.format(
+                    self.styles_table_name),
+                (layername, geom_field, stylename,
                  sld_body, default))
             session.commit()
-            return cursor.cursor
+            return cursor.lastrowid
     # TODO: add_styles with executemany
