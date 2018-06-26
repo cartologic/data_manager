@@ -182,6 +182,7 @@ class GpkgManager(object):
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
         assert layer
+        # TODO: add the correct geometry name using GEOMETRY_NAME
         source.CopyLayer(layer, layer.GetName(), [
                          'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
                          'TEMPORARY={}'
