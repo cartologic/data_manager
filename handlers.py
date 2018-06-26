@@ -121,7 +121,8 @@ class GpkgManager(object):
 
     @staticmethod
     def get_source_layers(source):
-        return [GpkgLayer(layer, source) for layer in source]
+        return [GpkgLayer(layer, source) for layer in source
+                if layer.GetName() != "layer_styles"]
 
     def get_layers(self):
         return self.get_source_layers(self.source)
