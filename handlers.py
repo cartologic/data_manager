@@ -11,6 +11,7 @@ from sys import stdout
 from contextlib import contextmanager
 import logging
 from .helpers import unicode_converter
+from django.template.defaultfilters import slugify
 from django.conf import settings
 from geonode.geoserver.helpers import gs_catalog
 try:
@@ -51,19 +52,35 @@ class GpkgLayer(object):
             return True
         return False
 
+    def get_new_name(self):
+        timestr = time.strftime("%Y%m%d_%H%M%S")
+        return "{}_{}".format(self.name, timestr)
+
     @property
     def name(self):
         return self.gpkg_layer.GetName()
+
+    @property
+    def sluged_name(self):
+        return slugify(self.gpkg_layer.GetName())
 
     def delete(self):
         self.source.DeleteLayer(self.name)
 
     def copy_to_source(self, dest_source, overwrite=True,
                        temporary=False):
+        options = [
+            'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
+            'TEMPORARY={}'.format("OFF" if not temporary else "ON")]
+        name = self.name
+        geom_schema = self.geometry_fields_schema()
         if dest_source:
-            dest_source.CopyLayer(self.gpkg_layer, self.name, [
-                'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-                'TEMPORARY={}'.format("OFF" if not temporary else "ON")])
+            if dest_source.GetLayerByName(self.name):
+                name = self.get_new_name()
+            if len(geom_schema) > 0:
+                options.append('GEOMETRY_NAME={}'.format(geom_schema[0][0]))
+            dest_source.CopyLayer(self.gpkg_layer, name, options)
+        return name
 
     def get_projection(self):
         # self.gpkg_layer.GetSpatialRef().ExportToProj4()
@@ -186,11 +203,8 @@ class GpkgManager(object):
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
         assert layer
-        # TODO: add the correct geometry name using GEOMETRY_NAME
-        source.CopyLayer(layer, layer.GetName(), [
-                         'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-                         'TEMPORARY={}'
-                         .format("OFF" if not temporary else "ON")])
+        layer = GpkgLayer(layer, source)
+        return layer.copy_to_source(source, overwrite=overwrite, temporary=temporary)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
