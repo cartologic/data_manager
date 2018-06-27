@@ -30,45 +30,41 @@ def list_uploads(request):
     return render(request, "gpkg_manager/list.html",
                   context={'uploads': uploads})
 
+# NOTE: this view will publish a new layer each time
+
 
 @login_required
 def publish_layer(request, upload_id, layername):
     user = request.user
     layername = str(layername)
+    gs_layername = SLUGIFIER(layername)
     upload = get_object_or_404(GpkgUpload, pk=upload_id)
     if user == upload.user or user.is_superuser:
         manager = upload.gpkg_manager
-        layer = manager.get_layer_by_name(layername)
+        package_layer = manager.get_layer_by_name(layername)
         conn = get_connection()
-        pg_source = GpkgManager.open_source(conn, is_postgres=True)
         gs_pub = GeoserverPublisher()
         stm = StyleManager(upload.package.path)
         geonode_pub = GeonodePublisher()
-        expected_name = DEFAULT_WORKSPACE+":"+layername
-        if not layer.is_geonode_layer:
-            # check if layer not in postgres then add it and publish
-            if not pg_source.GetLayerByName(layername):
-                manager.layer_to_postgis_cmd(layername, conn)
-                gs_pub.publish_postgis_layer(layername)
-            # check if layer not in geoserver
-            elif not gs_catalog.get_resource(expected_name,
-                                             store=get_gs_store(),
-                                             workspace=DEFAULT_WORKSPACE):
-                gs_pub.publish_postgis_layer(layername)
-            layer = geonode_pub.publish(layername)
-            gpkg_style = stm.get_style(layername)
-            if gpkg_style:
-                sld_body = gpkg_style.styleSLD
-                name = gpkg_style.styleName
-                # TODO: handle none default styles
-                # useDefault = gpkg_style.useAsDefault
-                style = stm.upload_style(name, sld_body, overwrite=True)
-                stm.set_default_layer_style(layer.alternate, style.name)
-                layer.default_style = style
-                layer.save()
+        tablename = manager.layer_to_postgis(layername, conn)
+        if package_layer.check_geonode_layer(gs_layername):
+            gs_layername = package_layer.get_new_name()
+        gs_pub.publish_postgis_layer(
+            tablename, layername=gs_layername)
+        layer = geonode_pub.publish(gs_layername)
+        gpkg_style = stm.get_style(layername)
+        if gpkg_style:
+            sld_body = gpkg_style.styleSLD
+            name = gpkg_style.styleName
+            # TODO: handle none default styles
+            # useDefault = gpkg_style.useAsDefault
+            style = stm.upload_style(name, sld_body, overwrite=True)
+            stm.set_default_layer_style(layer.alternate, style.name)
+            layer.default_style = style
+            layer.save()
 
-            if layer:
-                return redirect('geonode.layers.views.layer_detail',
-                                layer.alternate)
+        if layer:
+            return redirect('geonode.layers.views.layer_detail',
+                            layer.alternate)
 
     return HttpResponseForbidden()
