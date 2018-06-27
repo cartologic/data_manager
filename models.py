@@ -3,7 +3,7 @@ from django.db import models
 from geonode.people.models import Profile
 from datetime import datetime
 import os
-from .handlers import GpkgManager
+from .handlers import GpkgManager, StyleManager
 
 
 def validate_file_extension(value):
@@ -30,11 +30,19 @@ class GpkgUpload(models.Model):
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
     def __str__(self):
-        return os.path.basename(self.package.name)
+        return self.package_name
 
     def __unicode__(self):
+        return self.package_name
+
+    @property
+    def package_name(self):
         return os.path.basename(self.package.name)
 
     @property
     def gpkg_manager(self):
         return GpkgManager(self.package.path)
+
+    @property
+    def style_manager(self):
+        return StyleManager(self.package.path)
