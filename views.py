@@ -5,9 +5,8 @@ from django.contrib.auth.decorators import login_required
 from .models import GpkgUpload
 from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
-from .handlers import GpkgManager, StyleManager
-from .utils import (get_connection, DEFAULT_WORKSPACE,
-                    get_gs_store, gs_catalog)
+from .handlers import StyleManager, SLUGIFIER
+from .utils import (get_connection)
 
 
 @login_required
