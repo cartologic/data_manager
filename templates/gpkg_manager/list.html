@@ -12,12 +12,19 @@
             <h1>Your Uploads</h1>
             <br>
             {% for upload in uploads  %}
-            <h3>{{upload.package.name}}</h3>
-            <ul>
-                {% for layer in upload.gpkg_manager.get_layers %}
-                <li>{{layer.name}} <a href="{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}">publish</a></li>
-                {% endfor %}
-            </ul>
+            <div class="panel-group">
+                <div class="panel panel-primary">
+                  <div style="display: flex;justify-content: space-between;" class="panel-heading"> <span>{{upload.package_name}} </span> <span>uploaded: {{upload.uploaded_at}}</span> </div>
+                  <div class="panel-body">
+                    <ul class="list-group">
+                        {% for layer in upload.gpkg_manager.get_layers %}
+                            <li  style="display: flex;" class="list-group-item"><a data-toggle="collapse" href="#actions-{{upload.id}}" style="flex-grow: 1">{{layer.name}}</a><a href="{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}">publish</a></li>
+                        {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            
             {% endfor %}
         </div>
     </div>
