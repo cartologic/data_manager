@@ -45,17 +45,16 @@ class GeoserverPublisher(object):
         return "{}rest/workspaces/{}/datastores/{}/featuretypes"\
             .format(self.base_url, self.workspace, self.datastore)
 
-    def publish_postgis_layer(self, layername):
-        if layername:
-            req = requests.post(self.featureTypes_url,
-                                headers={'Content-Type': "application/json"},
-                                auth=HTTPBasicAuth(
-                                    self.username, self.password),
-                                json={"featureType": {"name": layername,
-                                                      "nativeName": layername}
-                                      })
-            if req.status_code == 201:
-                return True
+    def publish_postgis_layer(self, tablename, layername):
+        req = requests.post(self.featureTypes_url,
+                            headers={'Content-Type': "application/json"},
+                            auth=HTTPBasicAuth(
+                                self.username, self.password),
+                            json={"featureType": {"name":  layername,
+                                                  "nativeName": tablename}
+                                  })
+        if req.status_code == 201:
+            return True
         return False
 
 
