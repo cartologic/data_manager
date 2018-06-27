@@ -11,7 +11,6 @@ from sys import stdout
 from contextlib import contextmanager
 import logging
 from .helpers import unicode_converter
-from django.template.defaultfilters import slugify
 from django.conf import settings
 from geonode.geoserver.helpers import gs_catalog
 try:
@@ -19,7 +18,8 @@ try:
 except:
     import sqlite3
 from geonode.layers.models import Style
-from time import time
+import time
+from slugify import Slugify
 formatter = logging.Formatter(
     '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
                             %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
@@ -30,6 +30,8 @@ logger.addHandler(handler)
 LayerPostgisOptions = namedtuple(
     'LayerPostgisOptions', ['skipfailures', 'overwrite', 'append', 'update'])
 POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
+
+SLUGIFIER = Slugify(separator='_')
 
 
 class GpkgLayer(object):
@@ -45,16 +47,20 @@ class GpkgLayer(object):
                  self.layer_defn.GetFieldDefn(i).GetType())
                 for i in range(self.layer_defn.GetFieldCount())]
 
-    @property
-    def is_geonode_layer(self):
-        layername = self.gpkg_layer.GetName()
+    @staticmethod
+    def check_geonode_layer(layername):
         if Layer.objects.filter(alternate__contains=layername).count() > 0:
             return True
         return False
 
+    @property
+    def is_geonode_layer(self):
+        layername = self.gpkg_layer.GetName()
+        return GpkgLayer.check_geonode_layer(layername)
+
     def get_new_name(self):
         timestr = time.strftime("%Y%m%d_%H%M%S")
-        return "{}_{}".format(self.name, timestr)
+        return "{}_{}".format(SLUGIFIER(self.name), timestr)
 
     @property
     def name(self):
@@ -62,7 +68,7 @@ class GpkgLayer(object):
 
     @property
     def sluged_name(self):
-        return slugify(self.gpkg_layer.GetName())
+        return SLUGIFIER(self.gpkg_layer.GetName())
 
     def delete(self):
         self.source.DeleteLayer(self.name)
@@ -75,7 +81,7 @@ class GpkgLayer(object):
         name = self.name
         geom_schema = self.geometry_fields_schema()
         if dest_source:
-            if dest_source.GetLayerByName(self.name):
+            if not overwrite and dest_source.GetLayerByName(self.name):
                 name = self.get_new_name()
             if len(geom_schema) > 0:
                 options.append('GEOMETRY_NAME={}'.format(geom_schema[0][0]))
@@ -204,7 +210,8 @@ class GpkgManager(object):
         layer = self.source.GetLayerByName(layername)
         assert layer
         layer = GpkgLayer(layer, source)
-        return layer.copy_to_source(source, overwrite=overwrite, temporary=temporary)
+        return layer.copy_to_source(source, overwrite=overwrite,
+                                    temporary=temporary)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
@@ -283,7 +290,8 @@ class StyleManager(object):
         gs_catalog.save(gs_layer)
 
     def get_new_name(self, sld_name):
-        style = gs_catalog.get_style(sld_name)
+        style = gs_catalog.get_style(
+            sld_name, workspace=settings.DEFAULT_WORKSPACE)
         if not style:
             return sld_name
         else:
