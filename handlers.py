@@ -319,7 +319,7 @@ class StyleManager(object):
     def get_styles(self):
         with self.db_session() as session:
             cursor = session.cursor()
-            cursor.execute('select * from ?', (self.styles_table_name,))
+            cursor.execute('select * from {}'.format(self.styles_table_name))
             rows = cursor.fetchall()
             styles = [self.from_row(row) for row in rows]
             return styles
@@ -355,7 +355,7 @@ class StyleManager(object):
                     self.styles_table_name),
                 (layername,))
             rows = cursor.fetchone()
-            return LayerStyle(**rows) if len(rows) > 0 else None
+            return self.from_row(rows) if len(rows) > 0 else None
 
     @table_exists_decorator(failure_result=None)
     def add_style(self, layername, geom_field, stylename, sld_body,
