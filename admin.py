@@ -4,4 +4,4 @@ from .models import GpkgUpload
 
 @admin.register(GpkgUpload)
 class GpkgUploadAdmin(admin.ModelAdmin):
-    list_display = ('package', 'user')
+    list_display = ('pk', 'package', 'user')
