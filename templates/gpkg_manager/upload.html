@@ -32,12 +32,14 @@
                           <div class="panel-body">
                             <ul class="list-group">
                                 {% for layer in upload.gpkg_manager.get_layers %}
-                                    <li  style="display: flex;" class="list-group-item"><a data-toggle="collapse" href="#actions-{{upload.id}}" style="flex-grow: 1">{{layer.name}}</a><a href="{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}">publish</a></li>
+                                    <li  style="display: flex;" class="list-group-item"><a data-toggle="collapse" href="#actions-{{upload.id}}" style="flex-grow: 1">{{layer.name}}</a><button class="btn btn-primary" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">publish</button></li>
                                 {% endfor %}
                             </ul>
                           </div>
                         </div>
                       </div>
+                      {% empty %}
+                      <h3 id="no-uploads">No GeoPackages Please Upload New</h3>
                 {% endfor %}
             </div>
         </div>
@@ -56,6 +58,20 @@
               </div>
             </div>
           </div>
+    <div class="modal fade" id="modal-publishing" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Processing...</h4>
+          </div>
+          <div class="modal-body">
+            <div class="progress">
+              <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 {% endblock %}
 {% block extra_script %}
   <script src="{% static 'gpkg_manager/js/jquery.ui.widget.min.js' %}"></script>

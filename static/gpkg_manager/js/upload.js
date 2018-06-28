@@ -6,12 +6,10 @@ $(function () {
     function get_layer_template(layers) {
         var items = []
         layers.forEach(layer => {
-            items.push('<li  style="display: flex;" class="list-group-item"><span style="flex-grow: 1">' + layer.name + '</span><a href="' + layer.urls.publish_url + '">publish</a></li>')
+            items.push('<li  style="display: flex;" class="list-group-item"><span style="flex-grow: 1">' + layer.name + '</span><button onclick="publishLayer(' + "'" + layer.urls.publish_url + "'" + ')" class="btn btn-primary">publish</a></li>')
         })
-        console.log(items)
         return items.join('\n')
     }
-
     $("#fileupload").fileupload({
         dataType: 'json',
         sequentialUploads: true,
@@ -32,6 +30,9 @@ $(function () {
         },
         done: function (e, data) { /* 3. PROCESS THE RESPONSE FROM THE SERVER */
             if (data.result.is_valid) {
+                if ($('#no-uploads').length) {
+                    $('#no-uploads').remove()
+                }
                 const uploaded = data.result
                 const t = '<div class="panel-group">' +
                     '<div class="panel panel-primary">' +
@@ -47,7 +48,53 @@ $(function () {
             } else {
                 alert('invalid file')
             }
+        },
+        error: function (e, data) {
+            if (!e.status < 400) {
+                alert(e.statusText)
+            }
         }
+    }).on("fileuploadprocessfail", function (e, data) {
+        var file = data.files[data.index];
+        alert(file.error);
     });
 
-});
+})
+
+function getCRSFToken() {
+    let csrfToken, csrfMatch = document.cookie.match(/csrftoken=(\w+)/)
+    if (csrfMatch && csrfMatch.length > 0) {
+        csrfToken = csrfMatch[1]
+    }
+    return csrfToken
+}
+const publishLayer = function (publishURL) {
+    $("#modal-publishing").modal("show");
+    $.ajax({
+        url: publishURL,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': getCRSFToken(),
+            Accept: "text/plain; charset=utf-8",
+        },
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            if (result.status === "success") {
+                window.location.href = result.layer_url
+            }
+            $("#modal-publishing").modal("hide");
+        },
+        error: function (xhr, status, error) {
+            try {
+                result = JSON.parse(xhr.responseText)
+                if (result.status === 'failed') {
+                    alert(result.message)
+                }
+            } catch (err) {
+                alert(xhr.responseText)
+            }
+            $("#modal-publishing").modal("hide");
+
+        }
+    });
+}
