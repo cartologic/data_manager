@@ -1,6 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from .forms import GpkgUploadForm
-from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.generic import View
@@ -12,6 +11,8 @@ from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .handlers import StyleManager, SLUGIFIER
 from .utils import (get_connection)
+from cartoview.log_handler import get_logger
+logger = get_logger(__name__)
 
 
 class UploadView(View):
@@ -33,9 +34,15 @@ class UploadView(View):
             obj.save()
             data = {'is_valid': True, 'name': obj.package_name,
                     "id": obj.id,
-                    "uploaded_at": formats.date_format(obj.uploaded_at, "SHORT_DATETIME_FORMAT"),
+                    "uploaded_at": formats.date_format(obj.uploaded_at,
+                                                       "SHORT_DATETIME_FORMAT"),
                     "layers": [{'name': layer.name,
-                                'urls': {'publish_url': reverse('geopackage_publish', kwargs={"upload_id": obj.id, "layername": layer.name})}} for layer in obj.gpkg_manager.get_layers()],
+                                'urls': {'publish_url':
+                                         reverse('geopackage_publish',
+                                                 kwargs={"upload_id": obj.id,
+                                                         "layername":
+                                                         layer.name})}}
+                               for layer in obj.gpkg_manager.get_layers()],
                     'url':  obj.package.url}
         else:
             data = {'is_valid': False}
@@ -62,21 +69,26 @@ def publish_layer(request, upload_id, layername):
             gs_layername = package_layer.get_new_name()
         gs_pub.publish_postgis_layer(
             tablename, layername=gs_layername)
-        layer = geonode_pub.publish(gs_layername)
-        gpkg_style = stm.get_style(layername)
-        print gpkg_style
-        if gpkg_style:
-            sld_body = gpkg_style.styleSLD
-            name = gpkg_style.styleName
-            # TODO: handle none default styles
-            # useDefault = gpkg_style.useAsDefault
-            style = stm.upload_style(name, sld_body, overwrite=True)
-            stm.set_default_layer_style(layer.alternate, style.name)
-            layer.default_style = style
-            layer.save()
+        try:
+            layer = geonode_pub.publish(gs_layername)
+            if layer:
+                gpkg_style = stm.get_style(layername)
+                if gpkg_style:
+                    sld_body = gpkg_style.styleSLD
+                    name = gpkg_style.styleName
+                    # TODO: handle none default styles
+                    # useDefault = gpkg_style.useAsDefault
+                    style = stm.upload_style(name, sld_body, overwrite=True)
+                    stm.set_default_layer_style(layer.alternate, style.name)
+                    layer.default_style = style
+                    layer.save()
+                return JsonResponse({"status": "success", "layer_url": reverse(
+                    'layer_detail', kwargs={"layername": layer.alternate, })})
+        except Exception as e:
+            logger.error(e.message)
+            logger.error("DELETING Table {} from source".format(tablename))
+            source = manager.open_source(conn, True)
+            source.DeleteLayer(tablename)
 
-        if layer:
-            return redirect('geonode.layers.views.layer_detail',
-                            layer.alternate)
-
-    return HttpResponseForbidden()
+    return JsonResponse({'status': 'failed', 'message': "Layer Publish Failed \
+    please Contact portal admin"}, status=500)
