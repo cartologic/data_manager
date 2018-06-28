@@ -41,11 +41,16 @@ class GpkgLayer(object):
         self.geometry_type = self.gpkg_layer.GetGeomType()
         self.source = source
 
-    def get_schema(self):
-        return [(self.layer_defn.GetFieldDefn(i).GetName(),
-                 self.layer_defn.GetFieldDefn(i).GetTypeName(),
-                 self.layer_defn.GetFieldDefn(i).GetType())
-                for i in range(self.layer_defn.GetFieldCount())]
+    @staticmethod
+    def sort_field_by_name(fields):
+        return fields.sort(key=lambda field: field[0])
+
+    def get_none_geom_schema(self):
+        schema = [(self.layer_defn.GetFieldDefn(i).GetName(),
+                   self.layer_defn.GetFieldDefn(i).GetTypeName(),
+                   self.layer_defn.GetFieldDefn(i).GetType())
+                  for i in range(self.layer_defn.GetFieldCount())]
+        return schema
 
     @staticmethod
     def check_geonode_layer(layername):
@@ -103,6 +108,10 @@ class GpkgLayer(object):
                  self.layer_defn.GetGeomFieldDefn(i).GetType()) \
                 for i in range(self.layer_defn.GetGeomFieldCount())]
 
+    def get_full_schema(self):
+        return self.get_none_geom_schema(
+        )+self.geometry_fields_schema()
+
     def get_features(self):
         # get a feature with GetFeature(featureindex)
         # this is the one where featureindex may not start at 0
@@ -142,6 +151,14 @@ class GpkgManager(object):
         if layer:
             return True
         return False
+
+    @staticmethod
+    def compare_schema(layer1, layer2):
+        schema1 = [field[0].lower() for field in layer1.get_full_schema()]
+        schema1 = GpkgLayer.sort_field_by_name(schema1)
+        schema2 = [field[0].lower() for field in layer2.get_full_schema()]
+        schema2 = GpkgLayer.sort_field_by_name(schema2)
+        return schema1 == schema2
 
     def layer_exists(self, layername):
         return GpkgManager.source_layer_exists(self.source, layername)
