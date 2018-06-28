@@ -7,9 +7,7 @@ import pipes
 import subprocess
 from collections import namedtuple
 from geonode.layers.models import Layer
-from sys import stdout
 from contextlib import contextmanager
-import logging
 from .helpers import unicode_converter
 from django.conf import settings
 from geonode.geoserver.helpers import gs_catalog
@@ -20,13 +18,8 @@ except:
 from geonode.layers.models import Style
 import time
 from slugify import Slugify
-formatter = logging.Formatter(
-    '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
-                            %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(stdout)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+from cartoview.log_handler import get_logger
+logger = get_logger(__name__)
 LayerPostgisOptions = namedtuple(
     'LayerPostgisOptions', ['skipfailures', 'overwrite', 'append', 'update'])
 POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
@@ -307,6 +300,7 @@ class StyleManager(object):
         gs_catalog.save(gs_layer)
 
     def get_new_name(self, sld_name):
+        sld_name = SLUGIFIER(sld_name)
         style = gs_catalog.get_style(
             sld_name, workspace=settings.DEFAULT_WORKSPACE)
         if not style:

@@ -10,18 +10,10 @@ from geonode.geoserver.helpers import (
 from geonode.people.models import Profile
 import json
 import sys
-from sys import stdout
 from django.utils.translation import ugettext as _
-import logging
 import uuid
-
-formatter = logging.Formatter(
-    '[%(asctime)s] p%(process)s  { %(name)s %(pathname)s:%(lineno)d} \
-                            %(levelname)s - %(message)s', '%m-%d %H:%M:%S')
-logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(stdout)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+from cartoview.log_handler import get_logger
+logger = get_logger(__name__)
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
