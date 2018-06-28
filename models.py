@@ -35,6 +35,9 @@ class GpkgUpload(models.Model):
     def __unicode__(self):
         return self.package_name
 
+    class Meta:
+        ordering = ['-uploaded_at']
+
     @property
     def package_name(self):
         return os.path.basename(self.package.name)
