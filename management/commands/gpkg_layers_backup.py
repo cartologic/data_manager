@@ -2,13 +2,13 @@
 from __future__ import print_function
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from gpkg_manager.handlers import GpkgManager, StyleManager
+from gpkg_manager.handlers import (GpkgManager, StyleManager, get_connection)
 from geonode.layers.models import Layer
 import os
 import time
 import sys
 import multiprocessing
-from gpkg_manager.utils import get_connection, get_sld_body
+from gpkg_manager.utils import get_sld_body
 backup_process = None
 
 

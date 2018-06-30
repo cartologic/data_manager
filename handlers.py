@@ -17,6 +17,7 @@ except:
     import sqlite3
 from geonode.layers.models import Style
 import time
+from geonode.geoserver.helpers import (get_store, ogc_server_settings)
 from slugify import Slugify
 from cartoview.log_handler import get_logger
 logger = get_logger(__name__)
@@ -389,3 +390,17 @@ class StyleManager(object):
             session.commit()
             return cursor.lastrowid
     # TODO: add_styles with executemany
+
+
+def get_connection():
+    storename = ogc_server_settings.datastore_db['NAME']
+    store = get_store(
+        gs_catalog, storename, settings.DEFAULT_WORKSPACE)
+    db = ogc_server_settings.datastore_db
+    db_name = store.connection_parameters['database']
+    user = db['USER']
+    password = db['PASSWORD']
+    host = store.connection_parameters['host']
+    port = store.connection_parameters['port']
+    return GpkgManager.build_connection_string(
+        host, db_name, user, password, int(port) if port else 5432)

@@ -9,8 +9,8 @@ from .models import GpkgUpload
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
-from .handlers import StyleManager, SLUGIFIER
-from .utils import (get_connection)
+from .handlers import (StyleManager, SLUGIFIER,
+                       GpkgLayerException, get_connection)
 from cartoview.log_handler import get_logger
 logger = get_logger(__name__)
 
