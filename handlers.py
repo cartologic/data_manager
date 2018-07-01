@@ -62,6 +62,12 @@ class GpkgLayer(object):
         layername = self.gpkg_layer.GetName()
         return GpkgLayer.check_geonode_layer(SLUGIFIER(layername))
 
+    @property
+    def geonode_layers(self):
+        layername = self.gpkg_layer.GetName()
+        layername = SLUGIFIER(layername)
+        return Layer.objects.filter(alternate__contains=layername)
+
     def get_new_name(self):
         timestr = time.strftime("%Y%m%d_%H%M%S")
         return "{}_{}".format(SLUGIFIER(self.name), timestr)
