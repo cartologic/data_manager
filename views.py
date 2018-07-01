@@ -49,6 +49,39 @@ def get_compatible_layers(request, upload_id, layername):
         data = {"status": False, "message": e.message}
         status = 404
     return JsonResponse(data, status=status)
+
+
+@login_required
+@require_http_methods(['GET', ])
+def reload_layer(request, upload_id, layername, glayername):
+    layername = str(layername)
+    glayername = str(glayername)
+    layer = _resolve_layer(
+        request,
+        glayername,
+        'base.change_resourcebase',
+        _PERMISSION_MSG_VIEW)
+    try:
+        obj = GpkgUpload.objects.get(id=upload_id)
+        gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+        if not gpkg_layer:
+            raise GpkgLayerException("No Layer with this name in the package")
+        if not obj.gpkg_manager.check_schema_geonode(
+                layername, str(layer.alternate)):
+            raise GpkgLayerException("Invalid schema")
+        geonode_manager = GpkgManager(get_connection(), is_postgis=True)
+        gpkg_layer.copy_to_source(
+            geonode_manager.source, overwrite=True,
+            name=glayername.split(":").pop())
+        data = {"status": "success", "message": "Layer reloaded succesfully"}
+        status = 200
+    except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
+            GpkgLayerException), e:
+        data = {"status": "failed", "message": e.message}
+        status = 404
+    return JsonResponse(data, status=status)
+
+
 class UploadView(View):
     def get(self, request):
         user = request.user
