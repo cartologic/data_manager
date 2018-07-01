@@ -152,6 +152,18 @@ class GpkgManager(object):
         self.source = self.open_source(self.path, is_postgres=is_postgis)
         return self.source
 
+    def check_schema_geonode(self, layername, glayername):
+        gpkg_layer = self.get_layer_by_name(layername)
+        glayer = Layer.objects.get(alternate=glayername)
+        if not gpkg_layer:
+            raise GpkgLayerException("Cannot find this layer in Source")
+        geonode_manager = GpkgManager(get_connection(), is_postgis=True)
+        glayer = geonode_manager.get_layer_by_name(glayername.split(":").pop())
+        if not glayer:
+            return False
+        check = GpkgManager.compare_schema(gpkg_layer, glayer)
+        return check
+
     @staticmethod
     def source_layer_exists(source, layername):
         layer = source.GetLayerByName(layername)
