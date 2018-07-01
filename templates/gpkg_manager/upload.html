@@ -6,12 +6,16 @@
 {% block head %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'gpkg_manager/css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'gpkg_manager/css/multi-select.dist.css' %}">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 {% endblock %}
 {% block body %}
     <div id="page-wrapper">
         <div class="container-fluid" >
-            <h1>GeoPackage Manager</h1>
+            <div class="flex-element flex-space-between equal-area text-center flex-center">
+                <h1 class="text-wrap equal-area text-left">GeoPackage Manager</h1>
+                <button onclick="downloadModal()" class="btn btn-primary">Downloader</button>
+            </div>
             <br>
         <div class="well text-muted text-center js-upload-packages" style="padding-top: 4rem; padding-bottom: 4rem;">
                 <span class="glyphicon glyphicon-arrow-down" style="font-size: 4rem;"></span>
@@ -139,10 +143,41 @@
         </div>
       </div>
     </div>
+    <div class="modal fade" id="modal-downloader" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Download Layers</h4>
+          </div>
+          <div class="modal-body">
+              <div class="download-selector">
+                  <select multiple="multiple" id="layer-selector" name="layer-selector[]">
+                      {% for layer in download_layers %}
+                      <option value='{{layer.alternate}}'>{{layer.alternate}}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              <br>
+              <div class="text-center">
+                  <button id="download-layers" class="btn btn-primary">Download Selected</button>
+              </div>
+              
+          </div>
+        </div>
+      </div>
+    </div>
 {% endblock %}
 {% block extra_script %}
   <script src="{% static 'gpkg_manager/js/jquery.ui.widget.min.js' %}"></script>
   <script src="{% static 'gpkg_manager/js/jquery.iframe-transport.min.js' %}"></script>
   <script src="{% static 'gpkg_manager/js/jquery.fileupload.min.js' %}"></script>
+  <script src="{% static 'gpkg_manager/js/jquery.multi-select.js' %}"></script>
+  <script src="{% static 'gpkg_manager/js/jquery.quicksearch.js' %}"></script>
+  <script>
+    const urls={
+      downloadLayers:"{% url 'geopackage_download' %}"
+    }
+  </script>
   <script src="{% static 'gpkg_manager/js/upload.js' %}"></script>
  {% endblock %}

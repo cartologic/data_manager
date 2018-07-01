@@ -244,7 +244,6 @@ class GpkgManager(object):
 
     def layer_to_postgis(self, layername, connectionString, overwrite=True,
                          temporary=False, name=None):
-        logger.error(type(name))
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
         assert layer

@@ -309,3 +309,63 @@ const showPublishModal = function (publishURL, expectedName) {
         }
     });
 }
+const downloadModal = function () {
+    var selectedLayers = []
+    $("#download-layers").attr("disabled", true)
+    $('#layer-selector').multiSelect({
+        selectableHeader: "<input type='text' class='search-input form-control' autocomplete='off' placeholder='search layers'>",
+        selectionHeader: "<input type='text' class='search-input form-control' autocomplete='off' placeholder='search selected'>",
+        selectionFooter: "<div class='custom-header'>Selected Layers</div>",
+        selectableFooter: "<div class='custom-header'>All Layers</div>",
+        afterInit: function (ms) {
+            var that = this,
+                $selectableSearch = that.$selectableUl.prev(),
+                $selectionSearch = that.$selectionUl.prev(),
+                selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)',
+                selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
+
+            that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
+                .on('keydown', function (e) {
+                    if (e.which === 40) {
+                        that.$selectableUl.focus();
+                        return false;
+                    }
+                });
+
+            that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
+                .on('keydown', function (e) {
+                    if (e.which == 40) {
+                        that.$selectionUl.focus();
+                        return false;
+                    }
+                });
+        },
+        afterSelect: function (values) {
+            this.qs1.cache();
+            this.qs2.cache();
+            selectedLayers.push(values)
+            if (selectedLayers.length > 0) {
+                $("#download-layers").removeAttr("disabled");
+            } else {
+                $("#download-layers").attr("disabled", true)
+            }
+        },
+        afterDeselect: function (values) {
+            this.qs1.cache();
+            this.qs2.cache();
+            selectedLayers.splice(selectedLayers.indexOf(values))
+            if (selectedLayers.length > 0) {
+                $("#download-layers").removeAttr("disabled");
+            } else {
+                $("#download-layers").attr("disabled", true)
+            }
+        }
+    });
+    $("#download-layers").on("click", function () {
+        var win = window.open(
+            urls.downloadLayers + "?layers=" + selectedLayers.join(','),
+            '_blank');
+        win.focus();
+    })
+    $("#modal-downloader").modal("show");
+}

@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from .views import (publish_layer, UploadView,
                     deleteUpload, compare_to_geonode_layer,
-                    get_compatible_layers, reload_layer)
+                    get_compatible_layers, reload_layer, download_layers)
 urlpatterns = patterns('',
                        url(r'^upload/', UploadView.as_view(),
                            name="geopackage_upload"),
@@ -17,4 +17,6 @@ urlpatterns = patterns('',
                            name="compatible_layers"),
                        url(r'^delete/(?P<upload_id>[\d]+)/$', deleteUpload,
                            name="geopackage_delete"),
+                       url(r'^download$', download_layers,
+                           name="geopackage_download"),
                        )

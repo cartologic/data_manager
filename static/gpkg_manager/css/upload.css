@@ -25,3 +25,17 @@
 .glayer-actions {
     margin: 5px
 }
+
+.custom-header {
+    text-align: center;
+    background: black;
+    color: white;
+    border-radius: 5%;
+}
+
+.download-selector {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}

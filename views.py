@@ -1,11 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .forms import GpkgUploadForm
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import (
+    JsonResponse, HttpResponseForbidden)
 from django.views.generic import View
 from django.core.urlresolvers import reverse
 from django.utils import formats
 from .models import GpkgUpload
+from django.conf import settings
 from guardian.shortcuts import get_objects_for_user
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
@@ -16,6 +18,10 @@ from cartoview.log_handler import get_logger
 from django.views.decorators.http import require_http_methods
 from geonode.layers.models import Layer
 from geonode.layers.views import _resolve_layer
+from .utils import get_sld_body
+import os
+from cartoview.app_manager.helpers import create_direcotry
+from datetime import datetime
 _PERMISSION_MSG_VIEW = ('You don\'t have permissions to view this document')
 logger = get_logger(__name__)
 
@@ -86,8 +92,12 @@ class UploadView(View):
     def get(self, request):
         user = request.user
         uploads = GpkgUpload.objects.filter(user=user)
+        permitted = get_objects_for_user(
+            request.user, 'base.download_resourcebase')
+        permitted_layers = Layer.objects.filter(id__in=permitted)
         return render(request, "gpkg_manager/upload.html",
-                      context={'uploads': uploads})
+                      context={'uploads': uploads,
+                               'download_layers': permitted_layers})
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -178,7 +188,8 @@ def publish_layer(request, upload_id, layername, publish_name=None):
         geonode_pub = GeonodePublisher()
         tablename = manager.layer_to_postgis(
             layername, conn, overwrite=False, name=gs_layername)
-        if package_layer.check_geonode_layer(gs_layername) and not publish_name:
+        if package_layer.check_geonode_layer(gs_layername) and \
+                not publish_name:
             gs_layername = package_layer.get_new_name()
         gs_pub.publish_postgis_layer(
             tablename, layername=gs_layername)
@@ -206,3 +217,62 @@ def publish_layer(request, upload_id, layername, publish_name=None):
 
     return JsonResponse({'status': 'failed', 'message': "Layer Publish Failed \
     please Contact portal admin"}, status=500)
+
+
+def chunks(l, n):
+    for i in xrange(0, len(l), n):
+        yield l[i:i + n]
+
+
+@login_required
+@require_http_methods(['GET', ])
+def download_layers(request):
+    today = datetime.now()
+    date_as_path = today.strftime("%Y/%m/%d")
+    file_suff = today.strftime("%Y_%m_%d-%H_%M_%S")
+    file_name = 'download_{}.gpkg'.format(file_suff)
+    file_dir = os.path.join("packages_download",
+                            date_as_path,
+                            request.user.username)
+    package_url = os.path.join(file_dir, file_name)
+    package_dir = os.path.join(
+        settings.MEDIA_ROOT, file_dir)
+    create_direcotry(package_dir)
+    if not os.path.isdir(package_dir) or not os.access(package_dir, os.W_OK):
+        return HttpResponseForbidden('maybe destination is not writable\
+         or not a directory')
+    package_path = os.path.join(package_dir, file_name)
+    layernames = request.GET.get('layers', None)
+    if not layernames:
+        return HttpResponseForbidden("No layers provided")
+    layernames = [str(layername) for layername in layernames.split(',')]
+    permitted = get_objects_for_user(
+        request.user, 'base.download_resourcebase')
+    permitted_layers = Layer.objects.filter(id__in=permitted)
+    permitted_layers = [
+        layer for layer in permitted_layers if layer.alternate in layernames]
+    ds = GpkgManager.open_source(get_connection(), is_postgres=True)
+    if not ds:
+        return HttpResponseForbidden("Cannot connect to database")
+    layer_styles = []
+    table_names = []
+    for layer in permitted_layers:
+        typename = str(layer.alternate)
+        table_name = typename.split(":").pop()
+        if GpkgManager.source_layer_exists(ds, table_name):
+            table_names.append(table_name)
+            gattr = str(layer.attribute_set.filter(
+                attribute_type__contains='gml').first().attribute)
+            layer_style = layer.default_style
+            sld_url = layer_style.sld_url
+            style_name = str(layer_style.name)
+            layer_styles.append(
+                (table_name, gattr, style_name,
+                    get_sld_body(sld_url)))
+    GpkgManager.postgis_as_gpkg(
+        get_connection(), package_path, layernames=table_names)
+    stm = StyleManager(package_path)
+    stm.create_table()
+    for style in layer_styles:
+        stm.add_style(*style, default=True)
+    return redirect(os.path.join(settings.MEDIA_URL, package_url))
