@@ -37,6 +37,7 @@ class GpkgLayer(object):
         self.gpkg_layer = layer
         self.layer_defn = self.gpkg_layer.GetLayerDefn()
         self.geometry_type = self.gpkg_layer.GetGeomType()
+        self.geometry_type_name = ogr.GeometryTypeToName(self.geometry_type)
         self.source = source
 
     @staticmethod
