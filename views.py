@@ -101,16 +101,25 @@ class UploadView(View):
             obj.save()
             data = {'is_valid': True, 'name': obj.package_name,
                     "id": obj.id,
-                    "uploaded_at": formats.date_format(obj.uploaded_at,
-                                                       "SHORT_DATETIME_FORMAT"),
+                    "uploaded_at": formats.
+                    date_format(obj.uploaded_at,
+                                "SHORT_DATETIME_FORMAT"),
                     "layers": [{'name': layer.name,
+                                'type': layer.geometry_type_name,
+                                'feature_count': layer.feature_count,
                                 'urls': {'publish_url':
                                          reverse('geopackage_publish',
                                                  kwargs={"upload_id": obj.id,
                                                          "layername":
-                                                         layer.name})}}
+                                                         layer.name}),
+                                         'compatible_layers':
+                                         reverse('compatible_layers',
+                                                 args=(obj.id, layer.name))}}
                                for layer in obj.gpkg_manager.get_layers()],
-                    'url':  obj.package.url}
+                    'download_url':  obj.package.url,
+                    'delete_url':  reverse('geopackage_delete',
+                                           args=(obj.id,)),
+                    }
         else:
             data = {'is_valid': False}
         return JsonResponse(data)
