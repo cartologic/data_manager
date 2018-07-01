@@ -28,6 +28,10 @@ POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
 SLUGIFIER = Slugify(separator='_')
 
 
+class GpkgLayerException(Exception):
+    pass
+
+
 class GpkgLayer(object):
     def __init__(self, layer, source):
         self.gpkg_layer = layer
