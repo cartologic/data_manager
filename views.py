@@ -194,9 +194,10 @@ def publish_layer(request, upload_id, layername):
                     'layer_detail', kwargs={"layername": layer.alternate, })})
         except Exception as e:
             logger.error(e.message)
-            logger.error("DELETING Table {} from source".format(tablename))
-            source = manager.open_source(conn, True)
-            source.DeleteLayer(tablename)
+            if tablename:
+                logger.error("DELETING Table {} from source".format(tablename))
+                source = manager.open_source(conn, True)
+                source.DeleteLayer(tablename)
 
     return JsonResponse({'status': 'failed', 'message': "Layer Publish Failed \
     please Contact portal admin"}, status=500)
