@@ -161,10 +161,12 @@ class GpkgManager(object):
 
     @staticmethod
     def compare_schema(layer1, layer2):
-        schema1 = [field[0].lower() for field in layer1.get_full_schema()]
-        schema1 = GpkgLayer.sort_field_by_name(schema1)
-        schema2 = [field[0].lower() for field in layer2.get_full_schema()]
-        schema2 = GpkgLayer.sort_field_by_name(schema2)
+        schema1 = [(field[0].lower(), field[1], field[2])
+                   for field in layer1.get_full_schema()]
+        schema1.sort(key=lambda field: field[0])
+        schema2 = [(field[0].lower(), field[1], field[2])
+                   for field in layer2.get_full_schema()]
+        schema2.sort(key=lambda field: field[0])
         return schema1 == schema2
 
     def layer_exists(self, layername):
