@@ -1,0 +1,27 @@
+.flex-element {
+    display: flex;
+    flex-grow: 1
+}
+
+.flex-space-between {
+    justify-content: space-between;
+}
+
+.equal-area {
+    flex: 1
+}
+
+.text-wrap {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.flex-center {
+    align-items: center
+}
+
+.glayer-actions {
+    margin: 5px
+}
