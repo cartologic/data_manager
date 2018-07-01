@@ -71,31 +71,28 @@ class GeonodePublisher(object):
         layer = None
         try:
             logger.warning("=========> Creating the Layer in Django")
-            try:
-                layer, created = Layer.objects.\
-                    get_or_create(name=name,
-                                  workspace=workspace.name, defaults={
-                                      # "workspace": workspace.name,
-                                      "store": the_store.name,
-                                      "storeType": the_store.resource_type,
-                                      "alternate": "%s:%s" \
-                                      % (workspace.name.encode('utf-8'),
-                                         resource.name.encode('utf-8')),
-                                      "title": (resource.title or
-                                                'No title provided'),
-                                      "abstract": resource.abstract or
-                                      unicode(_('No abstract provided')
-                                              ).encode('utf-8'),
-                                      "owner": self.owner,
-                                      "uuid": str(uuid.uuid4()),
-                                      "bbox_x0": Decimal(resource.native_bbox[0]),
-                                      "bbox_x1": Decimal(resource.native_bbox[1]),
-                                      "bbox_y0": Decimal(resource.native_bbox[2]),
-                                      "bbox_y1": Decimal(resource.native_bbox[3]),
-                                      "srid": resource.projection
-                                  })
-            except:
-                pass
+            layer, created = Layer.objects.\
+                get_or_create(name=name,
+                              workspace=workspace.name, defaults={
+                                  # "workspace": workspace.name,
+                                  "store": the_store.name,
+                                  "storeType": the_store.resource_type,
+                                  "alternate": "%s:%s" \
+                                  % (workspace.name.encode('utf-8'),
+                                     resource.name.encode('utf-8')),
+                                  "title": (resource.title or
+                                            'No title provided'),
+                                  "abstract": resource.abstract or
+                                  unicode(_('No abstract provided')
+                                          ).encode('utf-8'),
+                                  "owner": self.owner,
+                                  "uuid": str(uuid.uuid4()),
+                                  "bbox_x0": Decimal(resource.native_bbox[0]),
+                                  "bbox_x1": Decimal(resource.native_bbox[1]),
+                                  "bbox_y0": Decimal(resource.native_bbox[2]),
+                                  "bbox_y1": Decimal(resource.native_bbox[3]),
+                                  "srid": resource.projection
+                              })
             logger.warning("=========> Settting permissions")
             # sync permissions in GeoFence
             perm_spec = json.loads(_perms_info_json(layer))
