@@ -243,13 +243,15 @@ class GpkgManager(object):
         return out, err
 
     def layer_to_postgis(self, layername, connectionString, overwrite=True,
-                         temporary=False):
+                         temporary=False, name=None):
+        logger.error(type(name))
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
         assert layer
         layer = GpkgLayer(layer, source)
+        
         return layer.copy_to_source(source, overwrite=overwrite,
-                                    temporary=temporary)
+                                    temporary=temporary, name=name)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
