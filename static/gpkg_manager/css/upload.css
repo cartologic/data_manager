@@ -33,6 +33,16 @@
     border-radius: 5%;
 }
 
+.layer-item {
+    flex-direction: row
+}
+
+@media screen and (max-width: 1024px) {
+    .layer-item {
+        flex-direction: column;
+    }
+}
+
 .download-selector {
     display: flex;
     flex: 1;

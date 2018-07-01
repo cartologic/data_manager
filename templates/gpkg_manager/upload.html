@@ -30,12 +30,12 @@
             data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
         </div>
         <div class="row">
-            <div id="uploaded_list" class="col-md-12">
+            <div id="uploaded_list" class="container col-md-12">
                     {% for upload in uploads  %}
-                    <div id="package-{{upload.id}}" class="panel-group">
+                    <div id="package-{{upload.id}}" class="container panel-group">
                         <div class="panel panel-primary">
                           <div class="panel-heading"> 
-                              <div class="flex-element flex-space-between equal-area text-center flex-center">
+                              <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
                                   <span class="text-wrap equal-area text-left">{{upload.package_name}} </span> 
                                   <span class="equal-area">uploaded: {{upload.uploaded_at}}</span> 
                                   <a href="{{upload.package.url}}" class="btn btn-success equal-area glayer-actions">Download</a>
@@ -46,7 +46,7 @@
                             <ul class="list-group">
                                 {% for layer in upload.gpkg_manager.get_layers %}
                                     <li class="list-group-item ">
-                                      <div class="flex-element flex-space-between equal-area text-center flex-center">
+                                      <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
                                           <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
                                           <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
                                           <span class="equal-area">Feature Count:{{layer.feature_count}}</span>

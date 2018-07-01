@@ -7,7 +7,7 @@ $(function () {
         var items = []
         layers.forEach(layer => {
             const t = '<li class="list-group-item ">' +
-                '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
+                '<div class="layer-item flex-element flex-space-between equal-area text-center flex-center">' +
                 '<span class="text-wrap equal-area text-left">Layer Name: ' + layer.name + '</span>' +
                 '<span class="equal-area">Type:' + layer.type + '</span>' +
                 '<span class="equal-area">Feature Count:' + layer.feature_count + '</span>' +
@@ -43,10 +43,10 @@ $(function () {
                     $('#no-uploads').remove()
                 }
                 const uploaded = data.result
-                const t = '<div id="package-' + uploaded.id + '" class="panel-group">' +
+                const t = '<div id="package-' + uploaded.id + '" class="container panel-group">' +
                     '<div class="panel panel-primary">' +
                     '<div class="panel-heading">' +
-                    '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
+                    '<div class="layer-item flex-element flex-space-between equal-area text-center flex-center">' +
                     '<span class="text-wrap equal-area text-left">' + uploaded.name + ' </span>' +
                     '<span class="equal-area">uploaded:' + uploaded.uploaded_at + '</span>' +
                     '<a href="' + uploaded.download_url + '" class="btn btn-success equal-area glayer-actions">Download</a>' +
