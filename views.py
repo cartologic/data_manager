@@ -48,6 +48,22 @@ class UploadView(View):
             data = {'is_valid': False}
         return JsonResponse(data)
 
+@login_required
+@require_http_methods(['GET', ])
+def compare_to_geonode_layer(request, upload_id, layername, glayername):
+    layername = str(layername)
+    glayername = str(glayername)
+    try:
+        obj = GpkgUpload.objects.get(id=upload_id)
+        check = obj.gpkg_manager.check_schema_geonode(layername, glayername)
+        data = {"status": "success", "compitable": check}
+        status = 200
+    except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
+            GpkgLayerException), e:
+        data = {"status": "failed", "message": e.message}
+        status = 404
+    return JsonResponse(data, status=status)
+
 # NOTE: this view will publish a new layer each time
 
 
