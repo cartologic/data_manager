@@ -6,15 +6,49 @@ from django.views.generic import View
 from django.core.urlresolvers import reverse
 from django.utils import formats
 from .models import GpkgUpload
+from guardian.shortcuts import get_objects_for_user
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .handlers import (StyleManager, SLUGIFIER,
-                       GpkgLayerException, get_connection)
+                       GpkgLayerException, get_connection, GpkgManager)
 from cartoview.log_handler import get_logger
+from django.views.decorators.http import require_http_methods
+from geonode.layers.models import Layer
+from geonode.layers.views import _resolve_layer
+_PERMISSION_MSG_VIEW = ('You don\'t have permissions to view this document')
 logger = get_logger(__name__)
 
 
+@login_required
+@require_http_methods(['GET', ])
+def get_compatible_layers(request, upload_id, layername):
+    layername = str(layername)
+    permitted = get_objects_for_user(
+        request.user, 'base.change_resourcebase')
+    permitted_layers = Layer.objects.filter(id__in=permitted)
+    try:
+        obj = GpkgUpload.objects.get(id=upload_id)
+        layers = []
+        for layer in permitted_layers:
+            print obj.gpkg_manager.check_schema_geonode(
+                layername, str(layer.alternate))
+        layers = [{"name": layer.alternate, "urls": {"reload_url":
+                                                     reverse('reload_layer',
+                                                             args=(upload_id,
+                                                                   layername,
+                                                                   layer.alternate)
+                                                             )}}
+                  for layer in permitted_layers
+                  if obj.gpkg_manager.check_schema_geonode(
+            layername, str(layer.alternate))]
+        data = {"status": "success", "layers": layers}
+        status = 200
+    except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
+            GpkgLayerException), e:
+        data = {"status": False, "message": e.message}
+        status = 404
+    return JsonResponse(data, status=status)
 class UploadView(View):
     def get(self, request):
         user = request.user
