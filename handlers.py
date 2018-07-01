@@ -40,10 +40,6 @@ class GpkgLayer(object):
         self.geometry_type_name = ogr.GeometryTypeToName(self.geometry_type)
         self.source = source
 
-    @staticmethod
-    def sort_field_by_name(fields):
-        return fields.sort(key=lambda field: field[0])
-
     def get_none_geom_schema(self):
         schema = [(self.layer_defn.GetFieldDefn(i).GetName(),
                    self.layer_defn.GetFieldDefn(i).GetTypeName(),
