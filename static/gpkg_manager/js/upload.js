@@ -6,7 +6,16 @@ $(function () {
     function get_layer_template(layers) {
         var items = []
         layers.forEach(layer => {
-            items.push('<li  style="display: flex;" class="list-group-item"><span style="flex-grow: 1">' + layer.name + '</span><button onclick="publishLayer(' + "'" + layer.urls.publish_url + "'" + ')" class="btn btn-primary">publish</a></li>')
+            const t = '<li class="list-group-item ">' +
+                '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
+                '<span class="text-wrap equal-area text-left">Layer Name: ' + layer.name + '</span>' +
+                '<span class="equal-area">Type:' + layer.type + '</span>' +
+                '<span class="equal-area">Feature Count:' + layer.feature_count + '</span>' +
+                '<button class="btn btn-primary glayer-actions" onclick="publishLayer(' + "'" + layer.urls.publish_url + "'" + ')">Publish New</button>' +
+                '<button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres(' + "'" + layer.urls.compatible_layers + "'" + ')">Update Existing</button>' +
+                '</div>' +
+                '</li>'
+            items.push(t)
         })
         return items.join('\n')
     }
@@ -34,15 +43,22 @@ $(function () {
                     $('#no-uploads').remove()
                 }
                 const uploaded = data.result
-                const t = '<div class="panel-group">' +
+                const t = '<div id="package-' + uploaded.id + '" class="panel-group">' +
                     '<div class="panel panel-primary">' +
-                    '<div style="display: flex;justify-content: space-between;" class="panel-heading"> <span>' + uploaded.name + '</span> <span>uploaded: ' + uploaded.uploaded_at + '</span> </div>' +
+                    '<div class="panel-heading">' +
+                    '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
+                    '<span class="text-wrap equal-area text-left">' + uploaded.name + ' </span>' +
+                    '<span class="equal-area">uploaded:' + uploaded.uploaded_at + '</span>' +
+                    '<a href="' + uploaded.download_url + '" class="btn btn-success equal-area glayer-actions">Download</a>' +
+                    '<button onclick="deletePackage(' + "'" + uploaded.delete_url + "'," + uploaded.id + ')" class="btn btn-danger equal-area glayer-actions">Delete</button>' +
+                    '</div>' +
+                    '</div>' +
                     '<div class="panel-body">' +
-                    '<ul class="list-group">' + get_layer_template(uploaded.layers) +
+                    '<ul class="list-group">' +
+                    get_layer_template(uploaded.layers) +
                     '</ul>' +
                     '</div>' +
-                    '</div>' +
-                    '</div>'
+                    '</div>';
                 $("#uploaded_list").prepend(t)
 
             } else {
@@ -75,7 +91,7 @@ const publishLayer = function (publishURL) {
         type: 'GET',
         headers: {
             'X-CSRFToken': getCRSFToken(),
-            Accept: "text/plain; charset=utf-8",
+            Accept: "application/json; charset=utf-8",
         },
         contentType: 'application/json; charset=utf-8',
         success: function (result) {
@@ -94,6 +110,156 @@ const publishLayer = function (publishURL) {
                 alert(xhr.responseText)
             }
             $("#modal-publishing").modal("hide");
+
+        }
+    });
+}
+const deletePackage = function (deleteURL, id) {
+    $("#modal-publishing").modal("show");
+    $.ajax({
+        url: deleteURL,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': getCRSFToken(),
+            Accept: "application/json; charset=utf-8",
+        },
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            if (result.status === "success") {
+                if ($('#package-' + id).length) {
+                    $('#package-' + id).remove()
+                }
+            }
+            $("#modal-publishing").modal("hide");
+        },
+        error: function (xhr, status, error) {
+            try {
+                result = JSON.parse(xhr.responseText)
+                if (result.status === 'failed') {
+                    alert(result.message)
+                }
+            } catch (err) {
+                alert(xhr.responseText)
+            }
+            $("#modal-publishing").modal("hide");
+
+        }
+    });
+}
+const compareSchema = function (compareURL) {
+    $("#modal-publishing").modal("show");
+    $.ajax({
+        url: compareURL,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': getCRSFToken(),
+            Accept: "application/json; charset=utf-8",
+        },
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            $("#modal-publishing").modal("hide");
+            setTimeout(function () {
+                if (result.status === "success" && result.compitable) {
+                    alert("the same schema")
+                } else {
+                    alert("not the same schema")
+                }
+            }, 500)
+        },
+        error: function (xhr, status, error) {
+            try {
+                result = JSON.parse(xhr.responseText)
+                if (result.status === 'failed') {
+                    alert(result.message)
+                }
+            } catch (err) {
+                alert(xhr.responseText)
+            }
+            $("#modal-publishing").modal("hide");
+
+        }
+    });
+}
+
+function get_compatible_template(layers) {
+    var items = []
+    layers.forEach(layer => {
+        const t = '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
+            '<span class="text-wrap equal-area text-left">' + layer.name + '</span>' +
+            '<button onclick="reloadLayer(' + "'" + layer.urls.reload_url + "')" + '" class="btn btn-primary glayer-actions">reload</button>' +
+            '</div>'
+        items.push(t)
+    })
+    if (items.length == 0) {
+        items.push("<h4>cannot find layers with the same schema</h4>")
+    }
+    return items.join('\n')
+}
+const reloadLayer = function (reloadURL) {
+    $("#modal-compatible-layers").modal("hide");
+    $("#modal-publishing").modal("show");
+    $.ajax({
+        url: reloadURL,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': getCRSFToken(),
+            Accept: "application/json; charset=utf-8",
+        },
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            $("#modal-publishing").modal("hide");
+            setTimeout(function () {
+                alert(result.message)
+            }, 500)
+        },
+        error: function (xhr, status, error) {
+            try {
+                result = JSON.parse(xhr.responseText)
+                if (result.status === 'failed') {
+                    alert(result.message)
+                }
+            } catch (err) {
+                alert(xhr.responseText)
+            }
+            $("#modal-compatible-layers").modal("hide");
+
+        }
+    });
+}
+const getCompatibleLayres = function (LayersURL) {
+    $(".compatible-layers").empty()
+    $(".compatible-layers").prepend('<div class="progress">' +
+        '<div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>' +
+        '</div>');
+    $("#modal-compatible-layers").modal("show");
+    $.ajax({
+        url: LayersURL,
+        type: 'GET',
+        headers: {
+            'X-CSRFToken': getCRSFToken(),
+            Accept: "application/json; charset=utf-8",
+        },
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            setTimeout(function () {
+                if (result.status === "success") {
+                    $(".compatible-layers").empty()
+                    $(".compatible-layers").prepend(get_compatible_template(result.layers))
+                } else {
+                    alert(result.message)
+                }
+            }, 500)
+        },
+        error: function (xhr, status, error) {
+            try {
+                result = JSON.parse(xhr.responseText)
+                if (result.status === 'failed') {
+                    alert(result.message)
+                }
+            } catch (err) {
+                alert(xhr.responseText)
+            }
+            $("#modal-compatible-layers").modal("hide");
 
         }
     });

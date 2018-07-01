@@ -5,15 +5,17 @@
 {% block title %} {{ block.super }} - {% trans "GeoPackage Manager" %} {% endblock %}
 {% block head %}
     {{ block.super }}
+    <link rel="stylesheet" href="{% static 'gpkg_manager/css/upload.css' %}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 {% endblock %}
 {% block body %}
     <div id="page-wrapper">
         <div class="container-fluid" >
-            <h1>GeoPackage Uploader</h1>
+            <h1>GeoPackage Manager</h1>
             <br>
         <div class="well text-muted text-center js-upload-packages" style="padding-top: 4rem; padding-bottom: 4rem;">
                 <span class="glyphicon glyphicon-arrow-down" style="font-size: 4rem;"></span>
-                <h3>Click to Choose Files or Drop Files Here to Upload</h3>
+                <h3>Click to Choose Packages or Drop Packages Here to Upload</h3>
         </div>
         {# 2. FILE INPUT TO BE USED BY THE PLUG-IN #}
         <input id="fileupload" type="file" name="package"
@@ -26,13 +28,46 @@
         <div class="row">
             <div id="uploaded_list" class="col-md-12">
                     {% for upload in uploads  %}
-                    <div class="panel-group">
+                    <div id="package-{{upload.id}}" class="panel-group">
                         <div class="panel panel-primary">
-                          <div style="display: flex;justify-content: space-between;" class="panel-heading"> <span>{{upload.package_name}} </span> <span>uploaded: {{upload.uploaded_at}}</span> </div>
+                          <div class="panel-heading"> 
+                              <div class="flex-element flex-space-between equal-area text-center flex-center">
+                                  <span class="text-wrap equal-area text-left">{{upload.package_name}} </span> 
+                                  <span class="equal-area">uploaded: {{upload.uploaded_at}}</span> 
+                                  <a href="{{upload.package.url}}" class="btn btn-success equal-area glayer-actions">Download</a>
+                                  <button onclick="deletePackage('{% url 'geopackage_delete' upload_id=upload.id %}',{{upload.id}})" class="btn btn-danger equal-area glayer-actions">Delete</button>
+                              </div>
+                          </div>
                           <div class="panel-body">
                             <ul class="list-group">
                                 {% for layer in upload.gpkg_manager.get_layers %}
-                                    <li  style="display: flex;" class="list-group-item"><a data-toggle="collapse" href="#actions-{{upload.id}}" style="flex-grow: 1">{{layer.name}}</a><button class="btn btn-primary" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">publish</button></li>
+                                    <li class="list-group-item ">
+                                      <div class="flex-element flex-space-between equal-area text-center flex-center">
+                                          <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
+                                          <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
+                                          <span class="equal-area">Feature Count:{{layer.feature_count}}</span>
+                                          <button class="btn btn-primary glayer-actions" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">Publish New</button>
+                                          <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update Existing</button>
+                                      </div>
+                                      {% comment %}
+                                      {% if layer.geonode_layers %}
+                                      <hr>
+                                      <h6>Geonode Layers</h6>
+                                      <ul>
+                                      {% for glyr in layer.geonode_layers %}
+                                        <li>
+                                          <div class="flex-element flex-space-between equal-area text-center flex-center">
+                                              <span class="text-wrap equal-area text-left">Layer Name: {{glyr.alternate}}</span>
+                                              <button class="btn btn-primary glayer-actions" onclick="compareSchema('{% url 'compare_schema' upload_id=upload.id layername=layer.name glayername=glyr.alternate %}')">Check Schema</button>
+                                              <button class="btn btn-primary glayer-actions" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">Update</button>
+                                              <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Overwrite</button>
+                                          </div>
+                                        </li>
+                                      {% endfor %}
+                                      </ul>
+                                      {% endif %}
+                                      {% endcomment %}
+                                    </li>
                                 {% endfor %}
                             </ul>
                           </div>
@@ -65,6 +100,21 @@
             <h4 class="modal-title">Processing...</h4>
           </div>
           <div class="modal-body">
+            <div class="progress">
+              <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="modal-compatible-layers" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Compatible Layers</h4>
+          </div>
+          <div class="modal-body compatible-layers">
             <div class="progress">
               <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
             </div>
