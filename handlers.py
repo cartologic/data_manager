@@ -132,9 +132,9 @@ class GpkgLayer(object):
 
 
 class GpkgManager(object):
-    def __init__(self, package_path):
+    def __init__(self, package_path, is_postgis=False):
         self.path = package_path
-        self.get_source()
+        self.get_source(is_postgis=is_postgis)
 
     @staticmethod
     def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass,
@@ -148,8 +148,8 @@ class GpkgManager(object):
         full_path = "PG: "+source_path if is_postgres else source_path
         return ogr.Open(full_path)
 
-    def get_source(self):
-        self.source = self.open_source(self.path)
+    def get_source(self, is_postgis=False):
+        self.source = self.open_source(self.path, is_postgres=is_postgis)
         return self.source
 
     @staticmethod
