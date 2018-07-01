@@ -115,6 +115,22 @@ class UploadView(View):
             data = {'is_valid': False}
         return JsonResponse(data)
 
+
+@login_required
+@require_http_methods(['GET', ])
+def deleteUpload(request, upload_id):
+    try:
+            # TODO:Check if user has permisssion to Delete this package
+        obj = GpkgUpload.objects.get(id=upload_id)
+        obj.delete()
+        data = {"status": "success", "message": "Object has been Deleted"}
+        status = 200
+    except GpkgUpload.DoesNotExist:
+        data = {"status": "failed", "message": "Object Not Found"}
+        status = 404
+    return JsonResponse(data, status=status)
+
+
 @login_required
 @require_http_methods(['GET', ])
 def compare_to_geonode_layer(request, upload_id, layername, glayername):
