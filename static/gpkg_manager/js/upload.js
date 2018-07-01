@@ -11,7 +11,7 @@ $(function () {
                 '<span class="text-wrap equal-area text-left">Layer Name: ' + layer.name + '</span>' +
                 '<span class="equal-area">Type:' + layer.type + '</span>' +
                 '<span class="equal-area">Feature Count:' + layer.feature_count + '</span>' +
-                '<button class="btn btn-primary glayer-actions" onclick="publishLayer(' + "'" + layer.urls.publish_url + "'" + ')">Publish New</button>' +
+                '<button class="btn btn-primary glayer-actions" onclick="showPublishModal(' + "'" + layer.urls.publish_url + "'," + "'" + layer.expected_publish_name + "'" + ')">Publish New</button>' +
                 '<button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres(' + "'" + layer.urls.compatible_layers + "'" + ')">Update Existing</button>' +
                 '</div>' +
                 '</li>'
@@ -261,6 +261,51 @@ const getCompatibleLayres = function (LayersURL) {
             }
             $("#modal-compatible-layers").modal("hide");
 
+        }
+    });
+}
+
+function convertToSlug(Text) {
+    return Text
+        .toLowerCase()
+        .replace(/ /g, '_')
+        .replace(/[^\w-]+/g, '');
+}
+const showPublishModal = function (publishURL, expectedName) {
+    $("#modal-prepublish").modal("show");
+    $('#publishname').val(expectedName)
+    $("#publishname").on("change paste keyup", function () {
+        var slugified = convertToSlug($(this).val())
+        $('#publishname').val(slugified)
+    });
+    $("#publish-btn").on("click", function () {
+        const layername = $('#publishname').val()
+        if (layername) {
+            $.ajax({
+                url: '/api/layers/?alternate__icontains=' + layername,
+                type: 'GET',
+                headers: {
+                    'X-CSRFToken': getCRSFToken(),
+                    Accept: "application/json; charset=utf-8",
+                },
+                contentType: 'application/json; charset=utf-8',
+                success: function (result) {
+                    if (result.objects.length > 0) {
+                        alert("Layer already exists. please choose another name")
+                    } else {
+                        $("#modal-prepublish").modal("hide");
+                        publishLayer(publishURL + "/" + layername)
+                    }
+                },
+                error: function (xhr, status, error) {
+                    try {
+                        result = JSON.parse(xhr.responseText)
+                        alert(result.message)
+                    } catch (err) {
+                        alert(xhr.responseText)
+                    }
+                }
+            });
         }
     });
 }

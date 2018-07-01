@@ -107,6 +107,7 @@ class UploadView(View):
                     "layers": [{'name': layer.name,
                                 'type': layer.geometry_type_name,
                                 'feature_count': layer.feature_count,
+                                'expected_publish_name': layer.get_new_name(),
                                 'urls': {'publish_url':
                                          reverse('geopackage_publish',
                                                  kwargs={"upload_id": obj.id,
@@ -160,10 +161,13 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
 
 
 @login_required
-def publish_layer(request, upload_id, layername):
+def publish_layer(request, upload_id, layername, publish_name=None):
     user = request.user
     layername = str(layername)
-    gs_layername = SLUGIFIER(layername)
+    publish_name = str(publish_name)
+    gs_layername = SLUGIFIER(
+        layername) if not publish_name else SLUGIFIER(publish_name)
+    gs_layername = str(gs_layername)
     upload = get_object_or_404(GpkgUpload, pk=upload_id)
     if user == upload.user or user.is_superuser:
         manager = upload.gpkg_manager
@@ -172,8 +176,9 @@ def publish_layer(request, upload_id, layername):
         gs_pub = GeoserverPublisher()
         stm = StyleManager(upload.package.path)
         geonode_pub = GeonodePublisher()
-        tablename = manager.layer_to_postgis(layername, conn, overwrite=False)
-        if package_layer.check_geonode_layer(gs_layername):
+        tablename = manager.layer_to_postgis(
+            layername, conn, overwrite=False, name=gs_layername)
+        if package_layer.check_geonode_layer(gs_layername) and not publish_name:
             gs_layername = package_layer.get_new_name()
         gs_pub.publish_postgis_layer(
             tablename, layername=gs_layername)

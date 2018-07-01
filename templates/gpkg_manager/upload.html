@@ -46,7 +46,7 @@
                                           <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
                                           <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
                                           <span class="equal-area">Feature Count:{{layer.feature_count}}</span>
-                                          <button class="btn btn-primary glayer-actions" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">Publish New</button>
+                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish New</button>
                                           <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update Existing</button>
                                       </div>
                                       {% comment %}
@@ -118,6 +118,23 @@
             <div class="progress">
               <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="modal-prepublish" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Publish Layer</h4>
+          </div>
+          <div class="modal-body">
+              <div class="form-group">
+                  <label for="publishname">Layername:</label>
+                  <input type="text" class="form-control" id="publishname">
+              </div>
+              <button id="publish-btn" class="btn btn-primary" >Publish</button>
           </div>
         </div>
       </div>
