@@ -54,6 +54,9 @@ class GpkgLayer(object):
         return False
 
     @property
+    def feature_count(self):
+        return len(self.gpkg_layer)
+
     def is_geonode_layer(self):
         layername = self.gpkg_layer.GetName()
         return GpkgLayer.check_geonode_layer(layername)
