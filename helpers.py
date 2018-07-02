@@ -10,3 +10,7 @@ def unicode_converter(data):
         return type(data)(map(unicode_converter, data))
     else:
         return data
+
+
+def urljoin(*args):
+    return "/".join(map(lambda x: str(x).rstrip('/'), args))

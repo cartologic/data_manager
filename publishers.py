@@ -9,6 +9,7 @@ from geonode.geoserver.helpers import (
     gs_catalog, get_store, ogc_server_settings, set_attributes_from_geoserver)
 from geonode.people.models import Profile
 import json
+from .helpers import urljoin
 import sys
 from django.utils.translation import ugettext as _
 import uuid
@@ -34,8 +35,8 @@ class GeoserverPublisher(object):
 
     @property
     def featureTypes_url(self):
-        return "{}rest/workspaces/{}/datastores/{}/featuretypes"\
-            .format(self.base_url, self.workspace, self.datastore)
+        return urljoin(self.base_url, "rest/workspaces/", self.workspace,
+                       "/datastores/", self.datastore, "/featuretypes")
 
     def publish_postgis_layer(self, tablename, layername):
         req = requests.post(self.featureTypes_url,
