@@ -273,7 +273,7 @@ function convertToSlug(Text) {
 }
 const showPublishModal = function (publishURL, expectedName) {
     $("#modal-prepublish").modal("show");
-    $('#publishname').val(expectedName)
+    $('#publishname').val(convertToSlug(expectedName))
     $("#publishname").on("change paste keyup", function () {
         var slugified = convertToSlug($(this).val())
         $('#publishname').val(slugified)

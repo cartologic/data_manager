@@ -49,6 +49,7 @@ class GpkgLayer(object):
 
     @staticmethod
     def check_geonode_layer(layername):
+        layername = layername.lower()
         if Layer.objects.filter(alternate__contains=layername).count() > 0:
             return True
         return False
@@ -69,8 +70,11 @@ class GpkgLayer(object):
         return Layer.objects.filter(alternate__contains=layername)
 
     def get_new_name(self):
+        name = SLUGIFIER(self.name.lower())
+        if not self.is_geonode_layer:
+            return name
         timestr = time.strftime("%Y%m%d_%H%M%S")
-        return "{}_{}".format(SLUGIFIER(self.name), timestr)
+        return "{}_{}".format(name, timestr)
 
     @property
     def name(self):
@@ -78,7 +82,7 @@ class GpkgLayer(object):
 
     @property
     def sluged_name(self):
-        return SLUGIFIER(self.gpkg_layer.GetName())
+        return SLUGIFIER(self.gpkg_layer.GetName().lower())
 
     def delete(self):
         self.source.DeleteLayer(self.name)
@@ -248,7 +252,7 @@ class GpkgManager(object):
         layer = self.source.GetLayerByName(layername)
         assert layer
         layer = GpkgLayer(layer, source)
-        
+
         return layer.copy_to_source(source, overwrite=overwrite,
                                     temporary=temporary, name=name)
 

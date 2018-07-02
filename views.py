@@ -188,8 +188,7 @@ def publish_layer(request, upload_id, layername, publish_name=None):
         geonode_pub = GeonodePublisher()
         tablename = manager.layer_to_postgis(
             layername, conn, overwrite=False, name=gs_layername)
-        if package_layer.check_geonode_layer(gs_layername) and \
-                not publish_name:
+        if not publish_name:
             gs_layername = package_layer.get_new_name()
         gs_pub.publish_postgis_layer(
             tablename, layername=gs_layername)
