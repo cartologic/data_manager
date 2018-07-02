@@ -50,8 +50,8 @@
                                           <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
                                           <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
                                           <span class="equal-area">Feature Count:{{layer.feature_count}}</span>
-                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish New</button>
-                                          <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update Existing</button>
+                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish</button>
+                                          <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update</button>
                                       </div>
                                       {% comment %}
                                       {% if layer.geonode_layers %}

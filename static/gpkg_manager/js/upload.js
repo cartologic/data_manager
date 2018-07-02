@@ -11,8 +11,8 @@ $(function () {
                 '<span class="text-wrap equal-area text-left">Layer Name: ' + layer.name + '</span>' +
                 '<span class="equal-area">Type:' + layer.type + '</span>' +
                 '<span class="equal-area">Feature Count:' + layer.feature_count + '</span>' +
-                '<button class="btn btn-primary glayer-actions" onclick="showPublishModal(' + "'" + layer.urls.publish_url + "'," + "'" + layer.expected_publish_name + "'" + ')">Publish New</button>' +
-                '<button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres(' + "'" + layer.urls.compatible_layers + "'" + ')">Update Existing</button>' +
+                '<button class="btn btn-primary glayer-actions" onclick="showPublishModal(' + "'" + layer.urls.publish_url + "'," + "'" + layer.expected_publish_name + "'" + ')">Publish</button>' +
+                '<button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres(' + "'" + layer.urls.compatible_layers + "'" + ')">Update</button>' +
                 '</div>' +
                 '</li>'
             items.push(t)
