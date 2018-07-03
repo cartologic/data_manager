@@ -22,5 +22,9 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('user', models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True)),
             ],
+            options={
+                'ordering': ['-uploaded_at'],
+                'permissions': (('view_package', 'View Geopackge'), ('download_package', 'Download Geopackge'), ('delete_package', 'Delete Geopackge'), ('publish_from_package', 'Publish Layers from Geopackge')),
+            },
         ),
     ]
