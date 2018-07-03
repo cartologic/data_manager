@@ -11,7 +11,7 @@ $(function () {
                 '<span class="text-wrap equal-area text-left">Layer Name: ' + layer.name + '</span>' +
                 '<span class="equal-area">Type:' + layer.type + '</span>' +
                 '<span class="equal-area">Feature Count:' + layer.feature_count + '</span>' +
-                '<button class="btn btn-primary glayer-actions" onclick="showPublishModal(' + "'" + layer.urls.publish_url + "'," + "'" + layer.expected_publish_name + "'" + ')">Publish</button>' +
+                '<button class="btn btn-primary glayer-actions" onclick="showPublishModal(' + "'" + layer.urls.publish_url + "'," + "'" + layer.expected_publish_name + "'" + ')">Publish New</button>' +
                 '<button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres(' + "'" + layer.urls.compatible_layers + "'" + ')">Update</button>' +
                 '</div>' +
                 '</li>'
@@ -32,10 +32,10 @@ $(function () {
         progressall: function (e, data) { /* 4. UPDATE THE PROGRESS BAR */
             var progress = parseInt(data.loaded / data.total * 100, 10);
             var strProgress = progress + "%";
-            $(".progress-bar").css({
+            $("#upload-progressbar").css({
                 "width": strProgress
             });
-            $(".progress-bar").text(strProgress);
+            $("#upload-progressbar").text(strProgress);
         },
         done: function (e, data) { /* 3. PROCESS THE RESPONSE FROM THE SERVER */
             if (data.result.is_valid) {
@@ -186,7 +186,7 @@ function get_compatible_template(layers) {
     layers.forEach(layer => {
         const t = '<div class="flex-element flex-space-between equal-area text-center flex-center">' +
             '<span class="text-wrap equal-area text-left">' + layer.name + '</span>' +
-            '<button onclick="reloadLayer(' + "'" + layer.urls.reload_url + "')" + '" class="btn btn-primary glayer-actions">reload</button>' +
+            '<button onclick="reloadLayer(' + "'" + layer.urls.reload_url + "')" + '" class="btn btn-primary glayer-actions">Replace</button>' +
             '</div>'
         items.push(t)
     })
