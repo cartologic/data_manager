@@ -1,6 +1,5 @@
 {% extends "app_manager/app_install_base.html" %}
-{% load bootstrap_tags staticfiles %}
-{% load i18n %}
+{% load bootstrap_tags staticfiles i18n guardian_tags %}
 
 {% block title %} {{ block.super }} - {% trans "GeoPackage Manager" %} {% endblock %}
 {% block head %}
@@ -32,14 +31,18 @@
         <div class="row">
             <div id="uploaded_list" class="container col-md-12">
                     {% for upload in uploads  %}
+                    {% get_obj_perms request.user for upload as "package_perms" %}
                     <div id="package-{{upload.id}}" class="container panel-group">
                         <div class="panel panel-primary">
                           <div class="panel-heading"> 
                               <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
                                   <span class="text-wrap equal-area text-left">{{upload.package_name}} </span> 
-                                  <span class="equal-area">uploaded: {{upload.uploaded_at}}</span> 
+                                  {% if "download_package" in package_perms %}
                                   <a href="{{upload.package.url}}" class="btn btn-success equal-area glayer-actions">Download</a>
+                                  {% endif %}
+                                  {% if "delete_package" in package_perms %}
                                   <button onclick="deletePackage('{% url 'geopackage_delete' upload_id=upload.id %}',{{upload.id}})" class="btn btn-danger equal-area glayer-actions">Delete</button>
+                                  {% endif %}
                               </div>
                           </div>
                           <div class="panel-body">
@@ -50,8 +53,10 @@
                                           <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
                                           <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
                                           <span class="equal-area">Feature Count:{{layer.feature_count}}</span>
-                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish</button>
+                                          {% if "publish_from_package" in package_perms %}
+                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish New</button>
                                           <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update</button>
+                                          {% endif %}
                                       </div>
                                       {% comment %}
                                       {% if layer.geonode_layers %}
@@ -75,6 +80,12 @@
                                 {% endfor %}
                             </ul>
                           </div>
+                          <div class="panel-footer">
+                            <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
+                                <span class="text-wrap equal-area text-left">Owner: {{upload.user.username}}</span> 
+                                <span class="equal-area text-right">uploaded At: {{upload.uploaded_at}}</span> 
+                            </div>
+                          </div>
                         </div>
                       </div>
                       {% empty %}
@@ -91,7 +102,7 @@
                 </div>
                 <div class="modal-body">
                   <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+                    <div id="upload-progressbar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
                   </div>
                 </div>
               </div>

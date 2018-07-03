@@ -5,6 +5,14 @@ from datetime import datetime
 import os
 from .handlers import GpkgManager, StyleManager
 from django.dispatch import receiver
+from guardian.shortcuts import assign_perm
+from guardian.shortcuts import get_anonymous_user
+GPKG_PERMISSIONS = (
+    ('view_package', 'View Geopackge'),
+    ('download_package', 'Download Geopackge'),
+    ('delete_package', 'Delete Geopackge'),
+    ('publish_from_package', 'Publish Layers from Geopackge'),
+)
 
 
 def validate_file_extension(value):
@@ -38,6 +46,7 @@ class GpkgUpload(models.Model):
 
     class Meta:
         ordering = ['-uploaded_at']
+        permissions = GPKG_PERMISSIONS
 
     @property
     def package_name(self):
@@ -73,3 +82,12 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     if not old_file == new_file:
         if os.path.isfile(old_file.path):
             os.remove(old_file.path)
+
+
+@receiver(models.signals.post_save, sender=GpkgUpload)
+def init_permissions(sender, instance, created, **kwargs):
+    if created:
+        # assign permissions for the owner of the package
+        if instance.user and instance.user != get_anonymous_user():
+            for p in GPKG_PERMISSIONS:
+                assign_perm(p[0], instance.user, instance)
