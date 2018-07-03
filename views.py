@@ -185,7 +185,7 @@ def publish_layer(request, upload_id, layername, publish_name=None):
         conn = get_connection()
         gs_pub = GeoserverPublisher()
         stm = StyleManager(upload.package.path)
-        geonode_pub = GeonodePublisher()
+        geonode_pub = GeonodePublisher(owner=request.user)
         tablename = manager.layer_to_postgis(
             layername, conn, overwrite=False, name=gs_layername)
         if not publish_name:
