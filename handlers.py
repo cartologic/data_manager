@@ -5,21 +5,24 @@ except:
     from osgeo import ogr
 import pipes
 import subprocess
+import time
 from collections import namedtuple
-from geonode.layers.models import Layer
 from contextlib import contextmanager
-from .helpers import unicode_converter
+
 from django.conf import settings
-from geonode.geoserver.helpers import gs_catalog
+from geonode.geoserver.helpers import (get_store, gs_catalog,
+                                       ogc_server_settings)
+from geonode.layers.models import Layer, Style
+from slugify import Slugify
+
+from cartoview.log_handler import get_logger
+
+from .helpers import unicode_converter
+
 try:
     import _sqlite3 as sqlite3
 except:
     import sqlite3
-from geonode.layers.models import Style
-import time
-from geonode.geoserver.helpers import (get_store, ogc_server_settings)
-from slugify import Slugify
-from cartoview.log_handler import get_logger
 logger = get_logger(__name__)
 LayerPostgisOptions = namedtuple(
     'LayerPostgisOptions', ['skipfailures', 'overwrite', 'append', 'update'])
@@ -87,11 +90,15 @@ class GpkgLayer(object):
     def delete(self):
         self.source.DeleteLayer(self.name)
 
-    def copy_to_source(self, dest_source, overwrite=True,
-                       temporary=False, name=None):
+    def copy_to_source(self,
+                       dest_source,
+                       overwrite=True,
+                       temporary=False,
+                       name=None):
         options = [
             'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-            'TEMPORARY={}'.format("OFF" if not temporary else "ON")]
+            'TEMPORARY={}'.format("OFF" if not temporary else "ON")
+        ]
         name = self.name if not name else name
         geom_schema = self.geometry_fields_schema()
         if dest_source:
@@ -120,19 +127,19 @@ class GpkgLayer(object):
                 for i in range(self.layer_defn.GetGeomFieldCount())]
 
     def get_full_schema(self):
-        return self.get_none_geom_schema(
-        )+self.geometry_fields_schema()
+        return self.get_none_geom_schema() + self.geometry_fields_schema()
 
     def get_features(self):
         # get a feature with GetFeature(featureindex)
         # this is the one where featureindex may not start at 0
         self.gpkg_layer.ResetReading()
         # get a metadata field with GetField('fieldname'/fieldindex)
-        return [{'fid': feature.GetFID(),
-                 'metadata_keys': feature.keys(),
-                 'metadata_dict': feature.items(),
-                 'geometry': feature.geometry()}
-                for feature in self.gpkg_layer]
+        return [{
+            'fid': feature.GetFID(),
+            'metadata_keys': feature.keys(),
+            'metadata_dict': feature.items(),
+            'geometry': feature.geometry()
+        } for feature in self.gpkg_layer]
 
 
 class GpkgManager(object):
@@ -141,7 +148,10 @@ class GpkgManager(object):
         self.get_source(is_postgis=is_postgis)
 
     @staticmethod
-    def build_connection_string(DB_server, DB_Name, DB_user, DB_Pass,
+    def build_connection_string(DB_server,
+                                DB_Name,
+                                DB_user,
+                                DB_Pass,
                                 DB_Port=5432):
         connectionString = "host=%s port=%d dbname=%s user=%s password=%s" % (
             DB_server, DB_Port, DB_Name, DB_user, DB_Pass)
@@ -149,7 +159,7 @@ class GpkgManager(object):
 
     @staticmethod
     def open_source(source_path, is_postgres=False):
-        full_path = "PG: "+source_path if is_postgres else source_path
+        full_path = "PG: " + source_path if is_postgres else source_path
         return ogr.Open(full_path)
 
     def get_source(self, is_postgis=False):
@@ -190,8 +200,10 @@ class GpkgManager(object):
 
     @staticmethod
     def get_source_layers(source):
-        return [GpkgLayer(layer, source) for layer in source
-                if layer.GetName() != "layer_styles"]
+        return [
+            GpkgLayer(layer, source) for layer in source
+            if layer.GetName() != "layer_styles"
+        ]
 
     def get_layers(self):
         return self.get_source_layers(self.source)
@@ -201,15 +213,15 @@ class GpkgManager(object):
 
     def get_layer_by_name(self, layername):
         if self.layer_exists(layername):
-            return GpkgLayer(self.source.GetLayerByName(layername),
-                             self.source)
+            return GpkgLayer(
+                self.source.GetLayerByName(layername), self.source)
         return None
 
     @staticmethod
     def read_source_schema(source):
         layers = GpkgManager.get_source_layers(source)
-        return tuple((layer.name, layer.get_schema() +
-                      layer.geometry_fields_schema())
+        return tuple((layer.name,
+                      layer.get_schema() + layer.geometry_fields_schema())
                      for layer in layers)
 
     def read_schema(self):
@@ -223,12 +235,15 @@ class GpkgManager(object):
     def get_features(self):
         return self.get_layers_features(self.get_layers())
 
-    def _cmd_lyr_postgis(self, gpkg_path, connectionString, layername,
+    def _cmd_lyr_postgis(self,
+                         gpkg_path,
+                         connectionString,
+                         layername,
                          options=POSTGIS_OPTIONS._asdict()):
 
         overwrite = options.get('overwrite', POSTGIS_OPTIONS.overwrite)
-        skipfailures = options.get(
-            'skipfailures', POSTGIS_OPTIONS.skipfailures)
+        skipfailures = options.get('skipfailures',
+                                   POSTGIS_OPTIONS.skipfailures)
         append_layer = options.get('append', POSTGIS_OPTIONS.append)
         update_layer = options.get('update', POSTGIS_OPTIONS.update)
         command = """ogr2ogr {} {} {} -f "PostgreSQL" PG:"{}" {} {}  {} """\
@@ -241,24 +256,30 @@ class GpkgManager(object):
         return command
 
     def execute(self, cmd):
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         return out, err
 
-    def layer_to_postgis(self, layername, connectionString, overwrite=True,
-                         temporary=False, name=None):
+    def layer_to_postgis(self,
+                         layername,
+                         connectionString,
+                         overwrite=True,
+                         temporary=False,
+                         name=None):
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
         assert layer
         layer = GpkgLayer(layer, source)
 
-        return layer.copy_to_source(source, overwrite=overwrite,
-                                    temporary=temporary, name=name)
+        return layer.copy_to_source(
+            source, overwrite=overwrite, temporary=temporary, name=name)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
-            self.path, connectionString, layername,
+            self.path,
+            connectionString,
+            layername,
             options=options if options else POSTGIS_OPTIONS._asdict())
         out, err = self.execute(cmd)
         if not err:
@@ -296,8 +317,10 @@ class LayerStyle(object):
         return attrs
 
     def as_dict(self):
-        return {attr: getattr(self, attr)
-                for attr in self.get_attribute_names()}
+        return {
+            attr: getattr(self, attr)
+            for attr in self.get_attribute_names()
+        }
 
 
 class StyleManager(object):
@@ -310,21 +333,23 @@ class StyleManager(object):
     def db_session(self, row_factory=True):
         conn = sqlite3.connect(self.db_path)
         if row_factory:
-            conn.row_factory = lambda c, r: dict(
-                [(col[0], r[idx]) for idx, col in enumerate(c.description)])
+            conn.row_factory = lambda c, r: dict([(col[0], r[idx]) for idx, col in enumerate(c.description)])
         yield conn
         conn.close()
 
     def upload_style(self, style_name, sld_body, overwrite=False):
         name = self.get_new_name(style_name)
-        gs_catalog.create_style(name, sld_body, overwrite=overwrite,
-                                raw=True, workspace=settings.DEFAULT_WORKSPACE)
+        gs_catalog.create_style(
+            name,
+            sld_body,
+            overwrite=overwrite,
+            raw=True,
+            workspace=settings.DEFAULT_WORKSPACE)
         style = gs_catalog.get_style(
             name, workspace=settings.DEFAULT_WORKSPACE)
         style_url = style.body_href
         return Style.objects.create(
-            name=name, sld_title=name, sld_body=sld_body,
-            sld_url=style_url)
+            name=name, sld_title=name, sld_body=sld_body, sld_url=style_url)
 
     def set_default_layer_style(self, layername, stylename):
         gs_layer = gs_catalog.get_layer(layername)
@@ -349,7 +374,9 @@ class StyleManager(object):
                 if this.check_styles_table_exists():
                     return function(*args, **kwargs)
                 return failure_result
+
             return wrapped
+
         return wrapper
 
     def check_styles_table_exists(self):
@@ -358,7 +385,7 @@ class StyleManager(object):
             cursor = session.cursor()
             cursor.execute(
                 """SELECT count(*) FROM sqlite_master \
-                WHERE type="table" AND name=?""", (self.styles_table_name,))
+                WHERE type="table" AND name=?""", (self.styles_table_name, ))
             result = cursor.fetchone()
             check = result[0]
         return check
@@ -404,35 +431,37 @@ class StyleManager(object):
             cursor = session.cursor()
             cursor.execute(
                 'SELECT * FROM {} WHERE f_table_name=?'.format(
-                    self.styles_table_name),
-                (layername,))
+                    self.styles_table_name), (layername, ))
             rows = cursor.fetchone()
             return self.from_row(rows) if len(rows) > 0 else None
 
     @table_exists_decorator(failure_result=None)
-    def add_style(self, layername, geom_field, stylename, sld_body,
+    def add_style(self,
+                  layername,
+                  geom_field,
+                  stylename,
+                  sld_body,
                   default=False):
         with self.db_session() as session:
             cursor = session.cursor()
             cursor.execute(
-                'INSERT INTO {} (f_table_name,f_geometry_column,styleName,styleSLD,useAsDefault) VALUES (?,?,?,?,?);'.format(
-                    self.styles_table_name),
-                (layername, geom_field, stylename,
-                 sld_body, default))
+                'INSERT INTO {} (f_table_name,f_geometry_column,styleName,styleSLD,useAsDefault) VALUES (?,?,?,?,?);'.
+                format(self.styles_table_name),
+                (layername, geom_field, stylename, sld_body, default))
             session.commit()
             return cursor.lastrowid
+
     # TODO: add_styles with executemany
 
 
 def get_connection():
     storename = ogc_server_settings.datastore_db['NAME']
-    store = get_store(
-        gs_catalog, storename, settings.DEFAULT_WORKSPACE)
+    store = get_store(gs_catalog, storename, settings.DEFAULT_WORKSPACE)
     db = ogc_server_settings.datastore_db
     db_name = store.connection_parameters['database']
     user = db['USER']
     password = db['PASSWORD']
     host = store.connection_parameters['host']
     port = store.connection_parameters['port']
-    return GpkgManager.build_connection_string(
-        host, db_name, user, password, int(port) if port else 5432)
+    return GpkgManager.build_connection_string(host, db_name, user, password,
+                                               int(port) if port else 5432)

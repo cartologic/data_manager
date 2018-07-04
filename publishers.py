@@ -1,37 +1,46 @@
 # -*- coding: utf-8 -*-
-from requests.auth import HTTPBasicAuth
+import json
+import sys
+import uuid
+from decimal import Decimal
+
 import requests
 from django.conf import settings
-from decimal import Decimal
-from geonode.layers.models import Layer
-from geonode.security.views import _perms_info_json
-from geonode.geoserver.helpers import (
-    gs_catalog, get_store, ogc_server_settings, set_attributes_from_geoserver)
-from geonode.people.models import Profile
-import json
-from .helpers import urljoin
-import sys
 from django.utils.translation import ugettext as _
-import uuid
+from geonode.geoserver.helpers import (get_store, gs_catalog,
+                                       ogc_server_settings,
+                                       set_attributes_from_geoserver)
+from geonode.layers.models import Layer
+from geonode.people.models import Profile
+from geonode.security.views import _perms_info_json
+from requests.auth import HTTPBasicAuth
+
 from cartoview.log_handler import get_logger
+
+from .helpers import urljoin
+
 logger = get_logger(__name__)
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
 
 class GeoserverPublisher(object):
-    def __init__(self, geoserver_url=ogc_server_settings.LOCATION,
-                 workspace=DEFAULT_WORKSPACE,
-                 datastore=ogc_server_settings.datastore_db['NAME'],
-                 geoserver_user={'username': ogc_server_settings.credentials[0],
-                                 'password': ogc_server_settings.credentials[1]}):
+    def __init__(
+            self,
+            geoserver_url=ogc_server_settings.LOCATION,
+            workspace=DEFAULT_WORKSPACE,
+            datastore=ogc_server_settings.datastore_db['NAME'],
+            geoserver_user={
+                'username': ogc_server_settings.credentials[0],
+                'password': ogc_server_settings.credentials[1]
+            }):
         self.base_url = geoserver_url
         self.workspace = workspace
         self.datastore = datastore
-        self.username = geoserver_user.get(
-            'username', ogc_server_settings.credentials[0])
-        self.password = geoserver_user.get(
-            'password', ogc_server_settings.credentials[1])
+        self.username = geoserver_user.get('username',
+                                           ogc_server_settings.credentials[0])
+        self.password = geoserver_user.get('password',
+                                           ogc_server_settings.credentials[1])
 
     @property
     def featureTypes_url(self):
@@ -39,13 +48,14 @@ class GeoserverPublisher(object):
                        "/datastores/", self.datastore, "/featuretypes")
 
     def publish_postgis_layer(self, tablename, layername):
-        req = requests.post(self.featureTypes_url,
-                            headers={'Content-Type': "application/json"},
-                            auth=HTTPBasicAuth(
-                                self.username, self.password),
-                            json={"featureType": {"name":  layername,
-                                                  "nativeName": tablename}
-                                  })
+        req = requests.post(
+            self.featureTypes_url,
+            headers={'Content-Type': "application/json"},
+            auth=HTTPBasicAuth(self.username, self.password),
+            json={"featureType": {
+                "name": layername,
+                "nativeName": tablename
+            }})
         if req.status_code == 201:
             return True
         return False
@@ -56,8 +66,7 @@ class GeonodePublisher(object):
                  storename=ogc_server_settings.datastore_db['NAME'],
                  workspace=DEFAULT_WORKSPACE,
                  owner=Profile.objects.filter(is_superuser=True).first()):
-        self.store = get_store(
-            gs_catalog, storename, workspace)
+        self.store = get_store(gs_catalog, storename, workspace)
         self.storename = storename
         self.workspace = workspace
         self.owner = owner

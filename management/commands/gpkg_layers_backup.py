@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from django.core.management.base import BaseCommand
-from django.conf import settings
-from gpkg_manager.handlers import (GpkgManager, StyleManager, get_connection)
-from geonode.layers.models import Layer
-import os
-import time
-import sys
+
 import multiprocessing
+import os
+import sys
+import time
+
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from geonode.layers.models import Layer
+
+from gpkg_manager.handlers import GpkgManager, StyleManager, get_connection
 from gpkg_manager.utils import get_sld_body
+
 backup_process = None
 
 
@@ -21,8 +25,7 @@ class Command(BaseCommand):
             '--destination',
             dest='destination',
             default=settings.BASE_DIR,
-            help='Location to save geopackage'
-        )
+            help='Location to save geopackage')
 
     def handle(self, *args, **options):
         global backup_process
@@ -45,14 +48,15 @@ class Command(BaseCommand):
                     table_name = typename.split(":").pop()
                     if GpkgManager.source_layer_exists(ds, table_name):
                         table_names.append(table_name)
-                        gattr = str(layer.attribute_set.filter(
-                            attribute_type__contains='gml').first().attribute)
+                        gattr = str(
+                            layer.attribute_set.filter(
+                                attribute_type__contains='gml').first()
+                            .attribute)
                         layer_style = layer.default_style
                         sld_url = layer_style.sld_url
                         style_name = str(layer_style.name)
-                        layer_styles.append(
-                            (table_name, gattr, style_name,
-                             get_sld_body(sld_url)))
+                        layer_styles.append((table_name, gattr, style_name,
+                                             get_sld_body(sld_url)))
 
                 def progress():
                     global running
@@ -62,17 +66,20 @@ class Command(BaseCommand):
                     stm.create_table()
                     for style in layer_styles:
                         stm.add_style(*style, default=True)
+
                 backup_process = multiprocessing.Process(target=progress)
                 backup_process.start()
                 i = 0
                 while backup_process.is_alive():
                     time.sleep(1)
-                    sys.stdout.write("\r%s" %
-                                     ("["+("="*i)+">]"+"Backup In Progress"))
+                    sys.stdout.write(
+                        "\r%s" % ("[" +
+                                  ("=" * i) + ">]" + "Backup In Progress"))
                     sys.stdout.flush()
                     i += 1
-                print('\n****************** Backup Created ****************** \n%s\n' %
-                      (package_dir))
+                print(
+                    '\n****************** Backup Created ****************** \n%s\n'
+                    % (package_dir))
         except Exception as e:
             if backup_process and backup_process.is_alive():
                 backup_process.terminate()
