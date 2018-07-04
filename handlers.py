@@ -9,6 +9,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 
+from uuid import uuid4
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
@@ -61,10 +62,10 @@ class GpkgLayer(object):
     def feature_count(self):
         return len(self.gpkg_layer)
 
-    @property
-    def is_geonode_layer(self):
-        layername = self.gpkg_layer.GetName()
-        return GpkgLayer.check_geonode_layer(SLUGIFIER(layername))
+    def is_geonode_layer(self, name=None):
+        if not name:
+            name = self.gpkg_layer.GetName().lower()
+        return GpkgLayer.check_geonode_layer(SLUGIFIER(name))
 
     @property
     def geonode_layers(self):
@@ -72,12 +73,22 @@ class GpkgLayer(object):
         layername = SLUGIFIER(layername)
         return Layer.objects.filter(alternate__contains=layername)
 
+    def _unique_name(self, name):
+        if len(name) > 63:
+            name = name[:63]
+        if not self.is_geonode_layer(name=name):
+            return str(name)
+        suffix = uuid4().__str__().split('-').pop()
+        if len(name) < (63 - (len(suffix) + 1)):
+            name += "_" + suffix
+        else:
+            name = name[:((63 - len(suffix)) - 2)] + "_" + suffix
+
+        return self._unique_name(SLUGIFIER(name))
+
     def get_new_name(self):
         name = SLUGIFIER(self.name.lower())
-        if not self.is_geonode_layer:
-            return name
-        timestr = time.strftime("%Y%m%d_%H%M%S")
-        return "{}_{}".format(name, timestr)
+        return self._unique_name(name)
 
     @property
     def name(self):
