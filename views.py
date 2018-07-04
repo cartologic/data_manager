@@ -253,6 +253,9 @@ def publish_layer(request, upload_id, layername, publish_name=None):
                 logger.error("DELETING Table {} from source".format(tablename))
                 source = manager.open_source(conn, True)
                 source.DeleteLayer(tablename)
+            if gs_layername and Layer.objects.filter(
+                    alternate__icontains=gs_layername).count() == 0:
+                gs_pub.delete_layer(gs_layername)
 
     return JsonResponse(
         {
