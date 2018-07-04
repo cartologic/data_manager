@@ -8,8 +8,9 @@ import subprocess
 import time
 from collections import namedtuple
 from contextlib import contextmanager
-
 from uuid import uuid4
+import lxml
+import StringIO
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
@@ -446,6 +447,16 @@ class StyleManager(object):
             rows = cursor.fetchone()
             return self.from_row(rows) if len(rows) > 0 else None
 
+    def convert_sld_attributes(self, sld_body):
+        tree = lxml.etree.parse(StringIO.StringIO(sld_body))
+        root = tree.getroot()
+        nsmap = {k: v for k, v in root.nsmap.iteritems() if k}
+        properties = tree.xpath('.//ogc:PropertyName', namespaces=nsmap)
+        for prop in properties:
+            value = str(prop.text).lower()
+            prop.text = value
+        return lxml.etree.tostring(tree)
+
     @table_exists_decorator(failure_result=None)
     def add_style(self,
                   layername,
@@ -453,6 +464,7 @@ class StyleManager(object):
                   stylename,
                   sld_body,
                   default=False):
+        sld_body = self.convert_sld_attributes(sld_body)
         with self.db_session() as session:
             cursor = session.cursor()
             cursor.execute(
