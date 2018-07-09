@@ -178,7 +178,7 @@ class GpkgManager(object):
         self.source = self.open_source(self.path, is_postgres=is_postgis)
         return self.source
 
-    def check_schema_geonode(self, layername, glayername):
+    def check_schema_geonode(self, layername, glayername, ignore_case=False):
         gpkg_layer = self.get_layer_by_name(layername)
         glayer = Layer.objects.get(alternate=glayername)
         if not gpkg_layer:
@@ -187,7 +187,7 @@ class GpkgManager(object):
         glayer = geonode_manager.get_layer_by_name(glayername.split(":").pop())
         if not glayer:
             return False
-        check = GpkgManager.compare_schema(gpkg_layer, glayer)
+        check = GpkgManager.compare_schema(gpkg_layer, glayer, ignore_case)
         return check
 
     @staticmethod
@@ -198,14 +198,25 @@ class GpkgManager(object):
         return False
 
     @staticmethod
-    def compare_schema(layer1, layer2):
-        schema1 = [(field[0].lower(), field[1], field[2])
-                   for field in layer1.get_full_schema()]
+    def compare_schema(layer1, layer2, ignore_case=False):
+        schema1 = layer1.get_full_schema()
+        schema2 = layer2.get_full_schema()
+        if ignore_case:
+            schema1 = [(field[0].lower(), field[1], field[2])
+                       for field in layer1.get_full_schema()]
+            schema2 = [(field[0].lower(), field[1], field[2])
+                       for field in layer2.get_full_schema()]
         schema1.sort(key=lambda field: field[0])
-        schema2 = [(field[0].lower(), field[1], field[2])
-                   for field in layer2.get_full_schema()]
         schema2.sort(key=lambda field: field[0])
-        return schema1 == schema2
+        deleted_fields = [field for field in schema1 if field not in schema2]
+        new_fields = [field for field in schema2 if field not in schema1]
+        deleted_fields.sort(key=lambda field: field[0])
+        new_fields.sort(key=lambda field: field[0])
+        return {
+            "compatible": schema1 == schema2,
+            "deleted_fields": deleted_fields,
+            "new_fields": new_fields,
+        }
 
     def layer_exists(self, layername):
         return GpkgManager.source_layer_exists(self.source, layername)
