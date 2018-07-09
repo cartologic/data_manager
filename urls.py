@@ -6,7 +6,7 @@ from .views import (UploadView, compare_to_geonode_layer, deleteUpload,
                     download_layers, get_compatible_layers, publish_layer,
                     reload_layer)
 
-api = Api(api_name='v1')
+api = Api(api_name='gpkg_api')
 api.register(GpkgUploadResource())
 urlpatterns = [
     url(r'^upload/', UploadView.as_view(), name="geopackage_upload"),
