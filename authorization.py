@@ -17,7 +17,8 @@ class GpkgAuthorization(Authorization):
         return object_list
 
     def create_detail(self, object_list, bundle):
-        return bundle.obj.user == bundle.request.user
+        return (bundle.obj.user == bundle.request.user
+                and not bundle.request.user.is_anonymous())
 
     def update_list(self, object_list, bundle):
         allowed = []
@@ -38,4 +39,3 @@ class GpkgAuthorization(Authorization):
 
     def delete_detail(self, object_list, bundle):
         return bundle.request.user.has_perm('delete_package', bundle.obj)
-       
