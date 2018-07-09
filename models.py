@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-from django.db import models
-from geonode.people.models import Profile
-from datetime import datetime
 import os
-from .handlers import GpkgManager, StyleManager
+from datetime import datetime
+
+from django.db import models
+from django.db.models import signals
 from django.dispatch import receiver
-from guardian.shortcuts import assign_perm
-from guardian.shortcuts import get_anonymous_user
+from geonode.people.models import Profile
+from guardian.shortcuts import assign_perm, get_anonymous_user
+from tastypie.models import create_api_key
+
+from .handlers import GpkgManager, StyleManager
+
 GPKG_PERMISSIONS = (
     ('view_package', 'View Geopackge'),
     ('download_package', 'Download Geopackge'),
@@ -91,3 +95,6 @@ def init_permissions(sender, instance, created, **kwargs):
         if instance.user and instance.user != get_anonymous_user():
             for p in GPKG_PERMISSIONS:
                 assign_perm(p[0], instance.user, instance)
+
+
+signals.post_save.connect(create_api_key, sender=Profile)
