@@ -107,7 +107,7 @@ class GpkgUploadResource(MultipartResource, ModelResource):
     class Meta:
         resource_name = "geopackage_manager"
         queryset = GpkgUpload.objects.all()
-        allowed_methods = ['get', 'post', 'put']
+        allowed_methods = ['get', 'post', 'put', 'delete']
         filtering = {
             "id": ALL,
             "uploaded_at": ALL,
@@ -133,6 +133,10 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('reload_layer'),
                 name="api_reload"),
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/compare%s$"
+                % (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('compare_to_geonode_layer'),
+                name="api_compare"),
         ]
 
     def get_err_response(self,
@@ -148,6 +152,9 @@ class GpkgUploadResource(MultipartResource, ModelResource):
     @ensure_postgis_connection
     def reload_layer(self, request, upload_id, layername, glayername,
                      **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
         layername = str(layername)
         glayername = str(glayername)
         layer = _resolve_layer(request, glayername, 'base.change_resourcebase',
@@ -155,9 +162,8 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         try:
             obj = GpkgUpload.objects.get(id=upload_id)
             if not request.user.has_perm('publish_from_package', obj):
-                return self.get_err_response(
-                    request, "You Don't Have \
-                Permission to Do this Action ", http.HttpUnauthorized)
+                return self.get_err_response(request, _PERMISSION_MSG_VIEW,
+                                             http.HttpUnauthorized)
             gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
             if not gpkg_layer:
                 raise GpkgLayerException(
@@ -224,6 +230,10 @@ class GpkgUploadResource(MultipartResource, ModelResource):
     @ensure_postgis_connection
     def compare_to_geonode_layer(self, request, upload_id, layername,
                                  glayername, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        ignore_case = request.GET.get('ignore_case', False)
         layername = str(layername)
         glayername = str(glayername)
         try:
@@ -233,10 +243,9 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                     request, "You Don't Have \
                 Permission to View this Package ", http.HttpUnauthorized)
             check = obj.gpkg_manager.check_schema_geonode(
-                layername, glayername)
-            data = {"compitable": check}
+                layername, glayername, ignore_case)
             return self.create_response(
-                request, data, response_class=http.HttpAccepted)
+                request, check, response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException), e:
             return self.get_err_response(request, e.message)
