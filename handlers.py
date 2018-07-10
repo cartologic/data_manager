@@ -99,6 +99,17 @@ class GpkgLayer(object):
     def sluged_name(self):
         return SLUGIFIER(self.gpkg_layer.GetName().lower())
 
+    def as_dict(self):
+        lyr = {
+            "feature_count": self.feature_count,
+            "expected_name": self.get_new_name(),
+            "name": self.name,
+            "geometry_type_name": self.geometry_type_name,
+            "geometry_type": self.geometry_type,
+            "projection": self.get_projection(),
+        }
+        return lyr
+
     def delete(self):
         self.source.DeleteLayer(self.name)
 
@@ -124,8 +135,13 @@ class GpkgLayer(object):
         return name
 
     def get_projection(self):
-        # self.gpkg_layer.GetSpatialRef().ExportToProj4()
-        return self.gpkg_layer.GetSpatialRef().GetAttrValue('projcs')
+        srs = self.gpkg_layer.GetSpatialRef()
+        data = {
+            "proj4": srs.ExportToProj4(),
+            "projcs": srs.GetAttrValue('projcs'),
+            "geocs": srs.GetAttrValue('geogcs')
+        }
+        return data
 
     def geometry_fields_schema(self):
         # some layers have multiple geometric feature types

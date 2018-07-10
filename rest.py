@@ -90,16 +90,9 @@ class GpkgUploadResource(MultipartResource, ModelResource):
     layers = fields.ListField(null=True, blank=True)
 
     def dehydrate_layers(self, bundle):
-        layers = []
-        for layer in bundle.obj.gpkg_manager.get_layers():
-            lyr = {
-                "feature_count": layer.feature_count,
-                "expected_name": layer.get_new_name(),
-                "name": layer.name,
-                "geometry_type_name": layer.geometry_type_name,
-                "geometry_type": layer.geometry_type
-            }
-            layers.append(lyr)
+        layers = [
+            layer.as_dict() for layer in bundle.obj.gpkg_manager.get_layers()
+        ]
         return layers
 
     def hydrate_user(self, bundle):
