@@ -107,6 +107,7 @@ class GpkgLayer(object):
             "geometry_type_name": self.geometry_type_name,
             "geometry_type": self.geometry_type,
             "projection": self.get_projection(),
+            "schema": self.get_full_schema(),
         }
         return lyr
 
