@@ -90,9 +90,43 @@ class GpkgUploadResource(MultipartResource, ModelResource):
     layers = fields.ListField(null=True, blank=True)
 
     def dehydrate_layers(self, bundle):
-        layers = [
-            layer.as_dict() for layer in bundle.obj.gpkg_manager.get_layers()
-        ]
+        layers = []
+        for layer in bundle.obj.gpkg_manager.get_layers():
+            details_url = bundle.request.build_absolute_uri(
+                reverse(
+                    'api_layer_details',
+                    kwargs={
+                        "resource_name": self._meta.resource_name,
+                        "upload_id": bundle.obj.id,
+                        "layername": layer.name,
+                        "api_name": self._meta.api_name
+                    }))
+            publish_url = bundle.request.build_absolute_uri(
+                reverse(
+                    'api_geopackage_publish',
+                    kwargs={
+                        "resource_name": self._meta.resource_name,
+                        "upload_id": bundle.obj.id,
+                        "layername": layer.name,
+                        "api_name": self._meta.api_name
+                    }))
+            compatible_layers_url = bundle.request.build_absolute_uri(
+                reverse(
+                    'api_compatible_layers',
+                    kwargs={
+                        "resource_name": self._meta.resource_name,
+                        "upload_id": bundle.obj.id,
+                        "layername": layer.name,
+                        "api_name": self._meta.api_name
+                    }))
+            urls = {
+                "details_url": details_url,
+                "publish_url": publish_url,
+                "compatible_layers_url": compatible_layers_url
+            }
+            lyr = {"name": layer.name, "urls": urls}
+            layers.append(lyr)
+
         return layers
 
     def hydrate_user(self, bundle):
@@ -103,6 +137,7 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         resource_name = "geopackage_manager"
         queryset = GpkgUpload.objects.all()
         allowed_methods = ['get', 'post', 'put', 'delete']
+        limit = 20
         filtering = {
             "id": ALL,
             "uploaded_at": ALL,
@@ -120,6 +155,10 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('publish'),
                 name="api_geopackage_publish"),
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)%s$"
+                % (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('layer_details'),
+                name="api_layer_details"),
             url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/compatible_layers%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('get_compatible_layers'),
@@ -143,6 +182,27 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         }
         return self.error_response(
             request, data, response_class=response_class)
+
+    @ensure_postgis_connection
+    def layer_details(self, request, upload_id, layername, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        layername = str(layername)
+        try:
+            obj = GpkgUpload.objects.get(id=upload_id)
+            if not request.user.has_perm('view_package', obj):
+                return self.get_err_response(request, _PERMISSION_MSG_VIEW,
+                                             http.HttpUnauthorized)
+            gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+            if not gpkg_layer:
+                raise GpkgLayerException(
+                    "No Layer with this name in the package")
+            return self.create_response(request, gpkg_layer.as_dict(),
+                                        http.HttpAccepted)
+        except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
+                GpkgLayerException), e:
+            return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
     def reload_layer(self, request, upload_id, layername, glayername,
@@ -212,15 +272,11 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                                     'api_reload',
                                     kwargs={
                                         "resource_name":
-                                        kwargs.get('resource_name'),
-                                        "upload_id":
-                                        upload_id,
-                                        "layername":
-                                        layername,
-                                        "glayername":
-                                        layer.alternate,
-                                        "api_name":
-                                        "gpkg_api"
+                                        self._meta.resource_name,
+                                        "upload_id": upload_id,
+                                        "layername": layername,
+                                        "glayername": layer.alternate,
+                                        "api_name": self._meta.api_name
                                     }))
                         }
                     }
