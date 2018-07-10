@@ -1,3 +1,5 @@
+from distutils.util import strtobool
+
 from django.conf.urls import url
 from django.core.urlresolvers import reverse
 from geonode.api.api import ProfileResource
@@ -192,6 +194,8 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         permitted = get_objects_for_user(request.user,
                                          'base.change_resourcebase')
         permitted_layers = Layer.objects.filter(id__in=permitted)
+        ignore_case = str(request.GET.get('ignore_case', False))
+        ignore_case = strtobool(ignore_case)
         try:
             obj = GpkgUpload.objects.get(id=upload_id)
             if not request.user.has_perm('view_package', obj):
@@ -200,26 +204,34 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                 Permission to View this Package ", http.HttpUnauthorized)
             layers = []
             for layer in permitted_layers:
-                print obj.gpkg_manager.check_schema_geonode(
-                    layername, str(layer.alternate))
-            layers = [{
-                "name": layer.alternate,
-                "urls": {
-                    "reload_url":
-                    request.build_absolute_uri(
-                        reverse(
-                            'api_reload',
-                            kwargs={
-                                "resource_name": kwargs.get('resource_name'),
-                                "upload_id": upload_id,
-                                "layername": layername,
-                                "glayername": layer.alternate,
-                                "api_name": "gpkg_api"
-                            }))
-                }
-            } for layer in permitted_layers
-                      if obj.gpkg_manager.check_schema_geonode(
-                          layername, str(layer.alternate))]
+                check = obj.gpkg_manager.check_schema_geonode(
+                    layername, str(layer.alternate), ignore_case)
+                if check.get('compatible'):
+                    lyr = {
+                        "name": layer.alternate,
+                        "compatible": check.get('compatible'),
+                        "new_fields": check.get("new_fields", []),
+                        "deleted_fields": check.get("deleted_fields", []),
+                        "urls": {
+                            "reload_url":
+                            request.build_absolute_uri(
+                                reverse(
+                                    'api_reload',
+                                    kwargs={
+                                        "resource_name":
+                                        kwargs.get('resource_name'),
+                                        "upload_id":
+                                        upload_id,
+                                        "layername":
+                                        layername,
+                                        "glayername":
+                                        layer.alternate,
+                                        "api_name":
+                                        "gpkg_api"
+                                    }))
+                        }
+                    }
+                    layers.append(lyr)
             data = {"layers": layers}
             return self.create_response(
                 request, data, response_class=http.HttpAccepted)
@@ -233,7 +245,8 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         self.method_check(request, allowed=['get'])
         self.is_authenticated(request)
         self.throttle_check(request)
-        ignore_case = request.GET.get('ignore_case', False)
+        ignore_case = str(request.GET.get('ignore_case', False))
+        ignore_case = strtobool(ignore_case)
         layername = str(layername)
         glayername = str(glayername)
         try:
@@ -255,13 +268,27 @@ class GpkgUploadResource(MultipartResource, ModelResource):
         self.method_check(request, allowed=['get'])
         self.is_authenticated(request)
         self.throttle_check(request)
+        replace = str(request.GET.get('replace', False))
+        replace = strtobool(replace)
         publish_name = request.GET.get('publish_name', None)
         user = request.user
         layername = str(layername)
-        publish_name = str(publish_name)
         gs_layername = SLUGIFIER(layername) if not publish_name else SLUGIFIER(
             publish_name)
         gs_layername = str(gs_layername)
+        if publish_name:
+            publish_name = str(publish_name)
+            permitted = get_objects_for_user(request.user,
+                                             'base.change_resourcebase')
+            permitted_layers = Layer.objects.filter(
+                id__in=permitted, alternate__contains=publish_name)
+            if permitted_layers.count() == 0 and replace:
+                return self.get_err_response(request, _PERMISSION_MSG_VIEW)
+            elif Layer.objects.filter(alternate__contains=publish_name).count(
+            ) > 0 and not replace:
+                return self.get_err_response(
+                    request, "Layer Already exists please choose different \
+                    name for this layer")
         try:
             upload = GpkgUpload.objects.get(pk=upload_id)
         except GpkgUpload.DoesNotExist as e:
@@ -274,17 +301,21 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                     request,
                     "Cannot Find {} Layer in This Package".format(layername),
                     http.HttpNotFound)
+
             conn = get_connection()
             gs_pub = GeoserverPublisher()
+            if replace:
+                gs_pub.delete_layer(gs_layername)
             stm = StyleManager(upload.package.path)
             geonode_pub = GeonodePublisher(owner=request.user)
             tablename = manager.layer_to_postgis(
-                layername, conn, overwrite=False, name=gs_layername)
+                layername, conn, overwrite=replace, name=gs_layername)
             if not publish_name:
                 gs_layername = package_layer.get_new_name()
             gs_pub.publish_postgis_layer(tablename, layername=gs_layername)
             try:
                 layer = geonode_pub.publish(gs_layername)
+                logger.error(layer)
                 if layer:
                     gpkg_style = stm.get_style(layername)
                     if gpkg_style:
@@ -299,6 +330,8 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                                                     style.name)
                         layer.default_style = style
                         layer.save()
+                    if replace:
+                        gs_pub.remove_cached(layer.alternate)
                     return self.create_response(
                         request, {
                             "layer_url":
@@ -310,6 +343,9 @@ class GpkgUploadResource(MultipartResource, ModelResource):
                                     }))
                         },
                         response_class=http.HttpAccepted)
+                else:
+                    return self.get_err_response(
+                        request, "Failed to Publish to Geonode")
             except Exception as e:
                 logger.error(e.message)
                 if tablename:

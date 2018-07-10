@@ -47,6 +47,13 @@ class GeoserverPublisher(object):
         return urljoin(self.base_url, "rest/workspaces/", self.workspace,
                        "/datastores/", self.datastore, "/featuretypes")
 
+    @property
+    def gwc_url(self):
+        return urljoin(self.base_url, "gwc/rest/")
+
+    def get_gwc_layer_url(self, layername):
+        return urljoin(self.gwc_url, "layers", layername)
+
     def publish_postgis_layer(self, tablename, layername):
         req = requests.post(
             self.featureTypes_url,
@@ -61,7 +68,12 @@ class GeoserverPublisher(object):
         return False
 
     def delete_layer(self, layername):
-        cascading_delete(gs_catalog, "{}:{}".format(self.workspace, layername))
+        try:
+            cascading_delete(gs_catalog, "{}:{}".format(
+                self.workspace, layername))
+        except Exception as e:
+            logger.error(e.message)
+
     def remove_cached(self, typename):
         import geonode.geoserver.helpers as helpers
         try:
@@ -144,7 +156,7 @@ class GeonodePublisher(object):
                     gs_catalog.save(resource)
 
         except Exception as e:
-            logger.debug(e.message)
+            logger.error(e.message)
             exception_type, error, traceback = sys.exc_info()
         else:
             if layer:
