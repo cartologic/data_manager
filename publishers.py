@@ -62,6 +62,14 @@ class GeoserverPublisher(object):
 
     def delete_layer(self, layername):
         cascading_delete(gs_catalog, "{}:{}".format(self.workspace, layername))
+    def remove_cached(self, typename):
+        import geonode.geoserver.helpers as helpers
+        try:
+            logger.warning("Clearing Layer Cache")
+            helpers._invalidate_geowebcache_layer(typename)
+            logger.warning("Layer Cache Cleared")
+        except BaseException as e:
+            logger.error(e.message)
 
 
 class GeonodePublisher(object):
