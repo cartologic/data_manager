@@ -371,8 +371,13 @@ class StyleManager(object):
         style = gs_catalog.get_style(
             name, workspace=settings.DEFAULT_WORKSPACE)
         style_url = style.body_href
-        return Style.objects.create(
-            name=name, sld_title=name, sld_body=sld_body, sld_url=style_url)
+        gstyle, created = Style.objects.get_or_create(
+            name=name,
+            sld_title=name,
+            workspace=settings.DEFAULT_WORKSPACE,
+            sld_body=sld_body,
+            sld_url=style_url)
+        return gstyle
 
     def set_default_layer_style(self, layername, stylename):
         gs_layer = gs_catalog.get_layer(layername)
