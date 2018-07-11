@@ -111,8 +111,9 @@ class ManagerDownload(models.Model):
     @property
     def expired(self):
         if self.expires_at:
-            diff = self.created_at - self.expires_at
-            if diff.seconds == 0:
+            diff = self.expires_at - self.created_at
+            print diff
+            if diff.days == 0:
                 return True
         return False
 
