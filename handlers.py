@@ -8,6 +8,7 @@ import pipes
 import StringIO
 import subprocess
 import time
+import zipfile
 from collections import namedtuple
 from contextlib import contextmanager
 from uuid import uuid4
@@ -19,6 +20,7 @@ from geonode.geoserver.helpers import (get_store, gs_catalog,
 from geonode.layers.models import Layer, Style
 from slugify import Slugify
 
+from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
 
 from .decorators import FORMAT_EXT, ensure_supported_format
@@ -34,6 +36,12 @@ LayerPostgisOptions = namedtuple(
 POSTGIS_OPTIONS = LayerPostgisOptions(True, True, False, False)
 
 SLUGIFIER = Slugify(separator='_')
+_temp_dir = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'tmp_generator')
+_downloads_dir = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'downloads')
+create_direcotry(_temp_dir)
+create_direcotry(_downloads_dir)
 
 
 class GpkgLayerException(Exception):
@@ -147,17 +155,51 @@ class GpkgLayer(object):
             with open(dest_path, 'w') as f:
                 f.write(spatial_ref.ExportToWkt())
 
+    @staticmethod
+    def _get_new_dir(self, base_dir=_temp_dir):
+        rand_str = uuid4().__str__().replace('-', '')[:8]
+        timestr = time.strftime("%Y/%m/%d/%H/%M/%S")
+        target = os.path.join(base_dir, timestr, rand_str)
+        create_direcotry(target)
+        return target
+
+    @staticmethod
+    def _zip(src, dst):
+        zip_path = "{}.zip".format(dst) if not dst.endswith('.zip') else dst
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            abs_src = os.path.abspath(src)
+            for dirname, subdirs, files in os.walk(src):
+                for filename in files:
+                    absname = os.path.abspath(os.path.join(dirname, filename))
+                    arcname = absname[len(abs_src) + 1:]
+                    print 'zipping %s as %s' % (os.path.join(
+                        dirname, filename), arcname)
+                    zf.write(absname, arcname)
+        return zip_path
+
+    def _move_to_downloads(self, target_path):
+        pass
+
     @ensure_supported_format
-    def as_format(self, dest_path, target_format="GPKG"):
-        if dest_path:
+    def as_format(self, target_name, target_format="GPKG"):
+        if target_name:
             ext = FORMAT_EXT[target_format]
-            if not dest_path.endswith(ext):
-                dest_path += ext
-            ds = ogr.GetDriverByName(target_format).CreateDataSource(dest_path)
+            if not target_name.endswith(ext):
+                target_name += ext
+            tmp_dir = self._get_new_dir()
+            tmp_format_path = os.path.join(tmp_dir, target_name)
+            ds = ogr.GetDriverByName(target_format).CreateDataSource(
+                tmp_format_path)
             ds.CopyLayer(self.gpkg_layer, self.name)
             if target_format == "ESRI Shapefile":
-                self.prj_file(os.path.splitext(dest_path)[0])
+                self.prj_file(os.path.splitext(tmp_format_path)[0])
+            download_dir = self._get_new_dir(base_dir=_downloads_dir)
+            zip_path = self._zip(
+                tmp_dir,
+                os.path.join(download_dir,
+                             os.path.splitext(target_name)[0]))
             ds = None
+            return zip_path
 
     def get_projection(self):
         srs = self.gpkg_layer.GetSpatialRef()
