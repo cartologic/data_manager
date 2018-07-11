@@ -9,7 +9,8 @@ from geonode.people.models import Profile
 from guardian.shortcuts import assign_perm, get_anonymous_user
 from tastypie.models import create_api_key
 from django.utils import timezone
-from .handlers import GpkgManager, StyleManager
+from .handlers import GpkgManager
+from .style_manager import StyleManager
 
 GPKG_PERMISSIONS = (
     ('view_package', 'View Geopackge'),

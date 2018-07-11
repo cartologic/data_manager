@@ -4,8 +4,11 @@ from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
 from requests.auth import HTTPBasicAuth
+from slugify import Slugify
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
+
+SLUGIFIER = Slugify(separator='_')
 
 
 def get_sld_body(url):

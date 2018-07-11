@@ -19,12 +19,13 @@ from guardian.shortcuts import get_objects_for_user, get_perms
 from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
 
+from .exceptions import GpkgLayerException
 from .forms import GpkgUploadForm
-from .handlers import (SLUGIFIER, GpkgLayerException, GpkgManager,
-                       StyleManager, get_connection)
+from .handlers import GpkgManager, get_connection
 from .models import GpkgUpload
 from .publishers import GeonodePublisher, GeoserverPublisher
-from .utils import get_sld_body
+from .style_manager import StyleManager
+from .utils import SLUGIFIER, get_sld_body
 
 _PERMISSION_MSG_VIEW = ('You don\'t have permissions to view this document')
 logger = get_logger(__name__)

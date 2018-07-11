@@ -10,7 +10,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from geonode.layers.models import Layer
 
-from gpkg_manager.handlers import GpkgManager, StyleManager, get_connection
+from gpkg_manager.handlers import GpkgManager, get_connection
+from gpkg_manager.style_manager import StyleManager
 from gpkg_manager.utils import get_sld_body
 
 backup_process = None

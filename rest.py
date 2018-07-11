@@ -23,11 +23,13 @@ from cartoview.log_handler import get_logger
 
 from .authorization import GpkgAuthorization
 from .decorators import FORMAT_EXT
-from .handlers import (SLUGIFIER, GpkgLayerException, GpkgManager,
-                       StyleManager, get_connection)
+from .exceptions import GpkgLayerException
+from .handlers import GpkgManager, get_connection
 from .helpers import read_in_chunks
 from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
+from .style_manager import StyleManager
+from .utils import SLUGIFIER
 
 logger = get_logger(__name__)
 
