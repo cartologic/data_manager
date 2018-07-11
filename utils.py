@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import requests
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,

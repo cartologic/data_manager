@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from distutils.util import strtobool
 
 from django.conf.urls import url

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 FORMAT_EXT = {
     "GPKG": '.gpkg',
     "KML": '.kml',
