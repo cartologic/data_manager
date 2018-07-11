@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+#TODO: split this module into submodules
 try:
     import ogr
 except:
     from osgeo import ogr
 import os
+import shutil
 import pipes
 import StringIO
 import subprocess
@@ -156,7 +158,7 @@ class GpkgLayer(object):
                 f.write(spatial_ref.ExportToWkt())
 
     @staticmethod
-    def _get_new_dir(self, base_dir=_temp_dir):
+    def _get_new_dir(base_dir=_temp_dir):
         rand_str = uuid4().__str__().replace('-', '')[:8]
         timestr = time.strftime("%Y/%m/%d/%H/%M/%S")
         target = os.path.join(base_dir, timestr, rand_str)
@@ -177,8 +179,8 @@ class GpkgLayer(object):
                     zf.write(absname, arcname)
         return zip_path
 
-    def _move_to_downloads(self, target_path):
-        pass
+    def _remove_dir(self, target_path):
+        shutil.rmtree(target_path)
 
     @ensure_supported_format
     def as_format(self, target_name, target_format="GPKG"):
@@ -199,6 +201,7 @@ class GpkgLayer(object):
                 os.path.join(download_dir,
                              os.path.splitext(target_name)[0]))
             ds = None
+            self._remove_dir(tmp_dir)
             return zip_path
 
     def get_projection(self):
