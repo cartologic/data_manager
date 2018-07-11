@@ -85,7 +85,19 @@ class MultipartResource(object):
         return super(MultipartResource, self).patch_detail(request, **kwargs)
 
 
-class GpkgUploadResource(MultipartResource, ModelResource):
+class BaseManagerResource(ModelResource):
+    def get_err_response(self,
+                         request,
+                         message,
+                         response_class=http.HttpApplicationError):
+        data = {
+            'error_message': message,
+        }
+        return self.error_response(
+            request, data, response_class=response_class)
+
+
+class GpkgUploadResource(MultipartResource, BaseManagerResource):
     package = fields.FileField(attribute="package", null=False, blank=False)
     user = fields.ForeignKey(ProfileResource, 'user', full=False, null=True)
     layers = fields.ListField(null=True, blank=True)
