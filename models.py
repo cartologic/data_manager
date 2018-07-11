@@ -8,7 +8,7 @@ from django.dispatch import receiver
 from geonode.people.models import Profile
 from guardian.shortcuts import assign_perm, get_anonymous_user
 from tastypie.models import create_api_key
-
+from django.utils import timezone
 from .handlers import GpkgManager, StyleManager
 
 GPKG_PERMISSIONS = (
@@ -98,3 +98,36 @@ def init_permissions(sender, instance, created, **kwargs):
 
 
 signals.post_save.connect(create_api_key, sender=Profile)
+
+
+class ManagerDownload(models.Model):
+    user = models.ForeignKey(Profile, blank=False, null=False)
+    file_path = models.TextField(null=False, blank=False)
+    created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
+    expires_at = models.DateTimeField(
+        auto_now=False, auto_now_add=False, blank=True, null=True)
+
+    @property
+    def expired(self):
+        if self.expires_at:
+            diff = self.created_at - self.expires_at
+            if diff.seconds == 0:
+                return True
+        return False
+
+
+@receiver(models.signals.post_save, sender=ManagerDownload)
+def populate_expires_at(sender, instance, created, **kwargs):
+    if created:
+        if not instance.expires_at:
+            instance.expires_at = instance.created_at + timezone.timedelta(
+                days=7)
+            instance.save()
+
+
+@receiver(models.signals.post_delete, sender=ManagerDownload)
+def delete_file_on_delete(sender, instance, **kwargs):
+    if instance.expired:
+        if os.path.isfile(instance.file_path):
+            os.remove(instance.file_path)

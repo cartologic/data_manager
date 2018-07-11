@@ -79,7 +79,7 @@ class GpkgLayer(object):
     def is_geonode_layer(self, name=None):
         if not name:
             name = self.gpkg_layer.GetName().lower()
-        return GpkgLayer.check_geonode_layer(SLUGIFIER(name))
+        return self.check_geonode_layer(SLUGIFIER(name))
 
     @property
     def geonode_layers(self):
