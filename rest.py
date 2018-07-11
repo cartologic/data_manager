@@ -140,10 +140,20 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                         "layername": layer.name,
                         "api_name": self._meta.api_name
                     }))
+            download_request_url = bundle.request.build_absolute_uri(
+                reverse(
+                    'api_layer_download_request',
+                    kwargs={
+                        "resource_name": self._meta.resource_name,
+                        "upload_id": bundle.obj.id,
+                        "layername": layer.name,
+                        "api_name": self._meta.api_name
+                    }))
             urls = {
                 "details_url": details_url,
                 "publish_url": publish_url,
-                "compatible_layers_url": compatible_layers_url
+                "compatible_layers_url": compatible_layers_url,
+                "download_request_url": download_request_url
             }
             lyr = {"name": layer.name, "urls": urls}
             layers.append(lyr)
