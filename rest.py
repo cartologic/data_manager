@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+import mimetypes
+import os
 from distutils.util import strtobool
 
 from django.conf.urls import url
 from django.core.urlresolvers import reverse
+from django.db import transaction
+from django.http import StreamingHttpResponse
 from geonode.api.api import ProfileResource
 from geonode.layers.models import Layer
 from geonode.layers.views import _resolve_layer
@@ -18,9 +22,11 @@ from tastypie.utils import trailing_slash
 from cartoview.log_handler import get_logger
 
 from .authorization import GpkgAuthorization
+from .decorators import FORMAT_EXT
 from .handlers import (SLUGIFIER, GpkgLayerException, GpkgManager,
                        StyleManager, get_connection)
-from .models import GpkgUpload
+from .helpers import read_in_chunks
+from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 
 logger = get_logger(__name__)
@@ -164,37 +170,71 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
 
     def prepend_urls(self):
         return [
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/publish%s$"
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/publish%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('publish'),
                 name="api_geopackage_publish"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)%s$"
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('layer_details'),
                 name="api_layer_details"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/compatible_layers%s$"
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/download_request%s$"
+                % (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('layer_download_request'),
+                name="api_layer_download_request"),
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/compatible_layers%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('get_compatible_layers'),
                 name="api_compatible_layers"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/reload%s$"
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/reload%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('reload_layer'),
                 name="api_reload"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>\w[\w/-]*)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/compare%s$"
+            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/compare%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('compare_to_geonode_layer'),
                 name="api_compare"),
         ]
 
-    def get_err_response(self,
-                         request,
-                         message,
-                         response_class=http.HttpApplicationError):
-        data = {
-            'error_message': message,
-        }
-        return self.error_response(
-            request, data, response_class=response_class)
+    def layer_download_request(self, request, upload_id, layername, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        target_format = str(request.GET.get('target_format', "GPKG"))
+        target_name = str(request.GET.get('target_name', "layer"))
+        if target_format not in FORMAT_EXT.keys():
+            return self.get_err_response(
+                request, "Not Supported Format, Supported Formats: {}".format(
+                    ",".join(FORMAT_EXT.keys())), http.HttpBadRequest)
+        layername = str(layername)
+        try:
+            obj = GpkgUpload.objects.get(id=upload_id)
+            if not request.user.has_perm('download_package', obj):
+                return self.get_err_response(request, _PERMISSION_MSG_VIEW,
+                                             http.HttpUnauthorized)
+            gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+            if not gpkg_layer:
+                raise GpkgLayerException(
+                    "No Layer with this name in the package")
+            with transaction.atomic():
+                zip_path = gpkg_layer.as_format(target_name, target_format)
+                download_obj = ManagerDownload.objects.create(
+                    user=request.user, file_path=zip_path)
+                url = request.build_absolute_uri(
+                    reverse(
+                        'api_manager_download',
+                        kwargs={
+                            "resource_name":
+                            ManagerDownloadResource.Meta.resource_name,
+                            "pk":
+                            download_obj.id,
+                            "api_name":
+                            self._meta.api_name
+                        }))
+                return self.create_response(request, {"download_url": url})
+        except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
+                GpkgLayerException), e:
+            return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
     def layer_details(self, request, upload_id, layername, **kwargs):
@@ -419,3 +459,51 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                         alternate__icontains=gs_layername).count() == 0:
                     gs_pub.delete_layer(gs_layername)
                 return self.get_err_response(request, e.message)
+
+
+class ManagerDownloadResource(BaseManagerResource):
+    user = fields.ForeignKey(ProfileResource, 'user', full=False, null=True)
+    expired = fields.BooleanField('expired', null=False)
+
+    class Meta:
+        resource_name = "manager_download"
+        queryset = ManagerDownload.objects.all()
+        allowed_methods = ['get']
+        limit = 20
+        filtering = {
+            "id": ALL,
+            "created_at": ALL,
+            "updated_at": ALL,
+            "user": ALL_WITH_RELATIONS
+        }
+        authentication = MultiAuthentication(ApiKeyAuthentication(),
+                                             BasicAuthentication(),
+                                             SessionAuthentication())
+
+    def prepend_urls(self):
+        return [
+            url(r"^(?P<resource_name>%s)/(?P<pk>[\d]+)/download%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('download'),
+                name="api_manager_download"),
+        ]
+
+    def download(self, request, pk, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        try:
+            obj = ManagerDownload.objects.get(id=pk)
+            if obj.expired:
+                raise Exception("Expired Download, Please Request a new one")
+            if obj.file_path:
+                f = open(obj.file_path, "rb")
+                response = StreamingHttpResponse(
+                    read_in_chunks(f),
+                    content_type=mimetypes.guess_type(f.name)[0])
+                response['Content-Disposition'] = 'attachment;filename=%s' % (
+                    os.path.basename(obj.file_path))
+                return response
+
+        except Exception as e:
+            return self.get_err_response(request, e.message)

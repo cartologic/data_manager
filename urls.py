@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import url, include
+from django.conf.urls import include, url
 from tastypie.api import Api
 
-from .rest import GpkgUploadResource
+from .rest import GpkgUploadResource, ManagerDownloadResource
 from .views import (UploadView, compare_to_geonode_layer, deleteUpload,
                     download_layers, get_compatible_layers, publish_layer,
                     reload_layer)
 
 api = Api(api_name='gpkg_api')
 api.register(GpkgUploadResource())
+api.register(ManagerDownloadResource())
 urlpatterns = [
     url(r'^upload/', UploadView.as_view(), name="geopackage_upload"),
     url(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)$',
