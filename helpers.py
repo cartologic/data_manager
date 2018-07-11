@@ -15,3 +15,15 @@ def unicode_converter(data):
 
 def urljoin(*args):
     return "/".join(map(lambda x: str(x).rstrip('/'), args))
+
+
+def read_in_chunks(obj, chunk_size=2048):
+    if isinstance(obj, file):
+        while True:
+            data = obj.read(chunk_size)
+            if not data:
+                break
+            yield data
+    else:
+        for i in xrange(0, len(obj), chunk_size):
+            yield obj[i:i + chunk_size]
