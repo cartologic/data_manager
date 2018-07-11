@@ -3,14 +3,16 @@ try:
     import ogr
 except:
     from osgeo import ogr
+import os
 import pipes
+import StringIO
 import subprocess
 import time
 from collections import namedtuple
 from contextlib import contextmanager
 from uuid import uuid4
+
 import lxml
-import StringIO
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
@@ -19,6 +21,7 @@ from slugify import Slugify
 
 from cartoview.log_handler import get_logger
 
+from .decorators import FORMAT_EXT, ensure_supported_format
 from .helpers import unicode_converter
 
 try:
@@ -134,6 +137,27 @@ class GpkgLayer(object):
         else:
             raise GpkgLayer("Can't open the source")
         return name
+
+    def prj_file(self, dest_path):
+        if dest_path:
+            ext = '.prj'
+            if not dest_path.endswith(ext):
+                dest_path += ext
+            spatial_ref = self.gpkg_layer.GetSpatialRef()
+            with open(dest_path, 'w') as f:
+                f.write(spatial_ref.ExportToWkt())
+
+    @ensure_supported_format
+    def as_format(self, dest_path, target_format="GPKG"):
+        if dest_path:
+            ext = FORMAT_EXT[target_format]
+            if not dest_path.endswith(ext):
+                dest_path += ext
+            ds = ogr.GetDriverByName(target_format).CreateDataSource(dest_path)
+            ds.CopyLayer(self.gpkg_layer, self.name)
+            if target_format == "ESRI Shapefile":
+                self.prj_file(os.path.splitext(dest_path)[0])
+            ds = None
 
     def get_projection(self):
         srs = self.gpkg_layer.GetSpatialRef()
