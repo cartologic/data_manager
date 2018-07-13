@@ -22,9 +22,10 @@ from tastypie.utils import trailing_slash
 from cartoview.log_handler import get_logger
 
 from .authorization import GpkgAuthorization
+from .constants import _downloads_dir
 from .decorators import FORMAT_EXT
 from .exceptions import GpkgLayerException
-from .handlers import GpkgManager, get_connection
+from .handlers import GpkgLayer, GpkgManager, get_connection
 from .helpers import read_in_chunks
 from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
@@ -206,7 +207,56 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('compare_to_geonode_layer'),
                 name="api_compare"),
+            url(r"^(?P<resource_name>%s)/download_request%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('download_request'),
+                name="api_download_request"),
         ]
+
+    def download_request(self, request, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        try:
+            with transaction.atomic():
+                layer_names = [
+                    str(layername) for layername in request.GET.get(
+                        'layer_names', "").split(',')
+                ]
+                if len(layer_names) > 0:
+                    for layername in layer_names:
+                        if Layer.objects.filter(
+                                alternate__contains=layername).count() == 0:
+                            raise Exception(
+                                "No Layer with this name {}".format(layername))
+                    file_name = str(
+                        request.GET.get('file_name', "download.gpkg"))
+                    download_dir = GpkgLayer._get_new_dir(
+                        base_dir=_downloads_dir)
+                    file_path = os.path.join(download_dir, file_name)
+                    GpkgManager.postgis_as_gpkg(get_connection(), file_path,
+                                                layer_names)
+                    download_obj = ManagerDownload.objects.create(
+                        user=request.user, file_path=file_path)
+                    url = request.build_absolute_uri(
+                        reverse(
+                            'api_manager_download',
+                            kwargs={
+                                "resource_name":
+                                ManagerDownloadResource.Meta.resource_name,
+                                "pk":
+                                download_obj.id,
+                                "api_name":
+                                self._meta.api_name
+                            }))
+                    return self.create_response(request, {"download_url": url})
+        except Exception as e:
+            return self.get_err_response(request, e.message,
+                                         http.HttpApplicationError)
+
+        return self.get_err_response(
+            request, "please provide layer_names as a query paramter ",
+            http.HttpAccepted)
 
     def layer_download_request(self, request, upload_id, layername, **kwargs):
         self.method_check(request, allowed=['get'])
