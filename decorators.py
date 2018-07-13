@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 FORMAT_EXT = {
     "GPKG": '.gpkg',
     "KML": '.kml',
@@ -21,5 +22,19 @@ def ensure_supported_format(func):
             return func(*args, **kwargs)
         else:
             raise FormatException("Unsupported Format")
+
+    return wrap
+
+
+def time_it(function):
+    def wrap(request, *args, **kwargs):
+        start = datetime.now()
+        result = function(request, *args, **kwargs)
+        end = datetime.now()
+        print("{} took ------>{} seconds".format(
+            function.__name__, (end - start).total_seconds()))
+        print("{} took ------>{} milliseconds".format(
+            function.__name__, (end - start).total_seconds() * 1000))
+        return result
 
     return wrap
