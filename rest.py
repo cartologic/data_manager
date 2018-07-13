@@ -7,13 +7,14 @@ from django.conf.urls import url
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import StreamingHttpResponse
+from django.utils.decorators import method_decorator
 from geonode.api.api import ProfileResource
 from geonode.layers.models import Layer
 from geonode.layers.views import _resolve_layer
 from guardian.shortcuts import get_objects_for_user, get_perms
 from tastypie import fields, http
-from tastypie.authentication import (ApiKeyAuthentication, BasicAuthentication,
-                                     MultiAuthentication,
+from .auth import ApiKeyPatch
+from tastypie.authentication import (BasicAuthentication, MultiAuthentication,
                                      SessionAuthentication)
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.resources import ModelResource
@@ -23,7 +24,7 @@ from cartoview.log_handler import get_logger
 
 from .authorization import GpkgAuthorization
 from .constants import _downloads_dir
-from .decorators import FORMAT_EXT
+from .decorators import FORMAT_EXT, time_it
 from .exceptions import GpkgLayerException
 from .handlers import GpkgLayer, GpkgManager, get_connection
 from .helpers import read_in_chunks
@@ -53,8 +54,6 @@ def ensure_postgis_connection(func):
 
 class MultipartResource(object):
     def deserialize(self, request, data, format=None):
-        logger.error(request.POST)
-        logger.error(request.FILES)
         if not format:
             format = request.META.get('CONTENT_TYPE', 'application/json')
 
@@ -177,7 +176,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             "user": ALL_WITH_RELATIONS
         }
         authorization = GpkgAuthorization()
-        authentication = MultiAuthentication(ApiKeyAuthentication(),
+        authentication = MultiAuthentication(ApiKeyPatch(),
                                              BasicAuthentication(),
                                              SessionAuthentication())
 
@@ -187,6 +186,10 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('publish'),
                 name="api_geopackage_publish"),
+            url(r"^(?P<resource_name>%s)/permissions%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('get_permissions'),
+                name="api_get_permissions"),
             url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('layer_details'),
@@ -212,6 +215,28 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 self.wrap_view('download_request'),
                 name="api_download_request"),
         ]
+
+    def get_permissions(self, request, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        _GPKG_PERMISSIONS = (
+            ('gpkg_manager.view_package', 'View Geopackge'),
+            ('gpkg_manager.download_package', 'Download Geopackge'),
+            ('gpkg_manager.delete_package', 'Delete Geopackge'),
+            ('gpkg_manager.publish_from_package',
+             'Publish Layers from Geopackge'),
+        )
+        permissions = {}
+        for permission in _GPKG_PERMISSIONS:
+            permitted = get_objects_for_user(request.user, permission[0])
+            permissions.update({
+                permission[0].split(".").pop(): {
+                    "ids": [obj.id for obj in permitted],
+                    "description": permission[1]
+                }
+            })
+        return self.create_response(request, permissions, http.HttpAccepted)
 
     def download_request(self, request, **kwargs):
         self.method_check(request, allowed=['get'])
@@ -404,6 +429,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             return self.get_err_response(request, e.message, http.HttpNotFound)
 
     @ensure_postgis_connection
+    @method_decorator(time_it)
     def compare_to_geonode_layer(self, request, upload_id, layername,
                                  glayername, **kwargs):
         self.method_check(request, allowed=['get'])
@@ -538,7 +564,7 @@ class ManagerDownloadResource(BaseManagerResource):
             "updated_at": ALL,
             "user": ALL_WITH_RELATIONS
         }
-        authentication = MultiAuthentication(ApiKeyAuthentication(),
+        authentication = MultiAuthentication(ApiKeyPatch(),
                                              BasicAuthentication(),
                                              SessionAuthentication())
 
