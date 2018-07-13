@@ -175,6 +175,8 @@ class GpkgManager(object):
 
     @staticmethod
     def postgis_as_gpkg(connectionString, dest_path, layernames=None):
+        if not dest_path.endswith(".gpkg"):
+            dest_path += ".gpkg"
         postgis_source = GpkgManager.open_source(
             connectionString, is_postgres=True)
         ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
@@ -182,7 +184,7 @@ class GpkgManager(object):
             if not layernames \
             else [layer for layer in
                   GpkgManager.get_source_layers(postgis_source)
-                  if layer.name in layernames]
+                  if layer and layer.name in layernames]
         for lyr in layers:
             ds.CopyLayer(lyr.gpkg_layer, lyr.name)
 
