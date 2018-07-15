@@ -10,7 +10,7 @@ from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
 from geonode.layers.models import Layer
-
+from .exceptions import GpkgLayerException
 from cartoview.log_handler import get_logger
 
 from .constants import POSTGIS_OPTIONS
@@ -51,7 +51,8 @@ class GpkgManager(object):
         geonode_manager = GpkgManager(get_connection(), is_postgis=True)
         glayer = geonode_manager.get_layer_by_name(glayername.split(":").pop())
         if not glayer:
-            return False
+            raise GpkgLayerException(
+                "Layer {} Cannot be found in Source".format(glayername))
         check = GpkgManager.compare_schema(gpkg_layer, glayer, ignore_case)
         return check
 
