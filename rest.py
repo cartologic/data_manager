@@ -68,30 +68,6 @@ class MultipartResource(object):
         return super(MultipartResource, self).deserialize(
             request, data, format)
 
-    def post_list(self, request, **kwargs):
-        if request.META.get('CONTENT_TYPE', '').startswith(
-                'multipart/form-data') and not hasattr(request, '_body'):
-            request._body = ''
-        return super(MultipartResource, self).post_list(request, **kwargs)
-
-    def post_detail(self, request, **kwargs):
-        if request.META.get('CONTENT_TYPE', '').startswith(
-                'multipart/form-data') and not hasattr(request, '_body'):
-            request._body = ''
-        return super(MultipartResource, self).post_detail(request, **kwargs)
-
-    def put_detail(self, request, **kwargs):
-        if request.META.get('CONTENT_TYPE', '').startswith(
-                'multipart/form-data') and not hasattr(request, '_body'):
-            request._body = ''
-        return super(MultipartResource, self).put_detail(request, **kwargs)
-
-    def patch_detail(self, request, **kwargs):
-        if request.META.get('CONTENT_TYPE', '').startswith(
-                'multipart/form-data') and not hasattr(request, '_body'):
-            request._body = ''
-        return super(MultipartResource, self).patch_detail(request, **kwargs)
-
 
 class BaseManagerResource(ModelResource):
     def get_err_response(self,
@@ -108,7 +84,14 @@ class BaseManagerResource(ModelResource):
 class GpkgUploadResource(MultipartResource, BaseManagerResource):
     package = fields.FileField(attribute="package", null=False, blank=False)
     user = fields.ForeignKey(ProfileResource, 'user', full=False, null=True)
-    layers = fields.ListField(null=True, blank=True)
+    layers = fields.DictField(null=True, blank=True)
+    download_url = fields.CharField(null=True, blank=True)
+
+    def dehydrate_download_url(self, bundle):
+        return bundle.obj.package.url
+
+    def dehydrate_user(self, bundle):
+        return {"username": bundle.request.user.username}
 
     def dehydrate_layers(self, bundle):
         layers = []
@@ -155,7 +138,13 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 "compatible_layers_url": compatible_layers_url,
                 "download_request_url": download_request_url
             }
-            lyr = {"name": layer.name, "urls": urls}
+            lyr = {
+                "name": layer.name,
+                "expected_name": layer.get_new_name(),
+                "geometry_type_name": layer.geometry_type_name,
+                "feature_count": layer.feature_count,
+                "urls": urls
+            }
             layers.append(lyr)
 
         return layers
