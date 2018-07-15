@@ -167,6 +167,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
     class Meta:
         resource_name = "geopackage_manager"
         queryset = GpkgUpload.objects.all()
+        always_return_data = True
         allowed_methods = ['get', 'post', 'put', 'delete']
         limit = 20
         filtering = {
@@ -248,40 +249,40 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                     str(layername) for layername in request.GET.get(
                         'layer_names', "").split(',')
                 ]
-                if len(layer_names) > 0:
-                    for layername in layer_names:
-                        if Layer.objects.filter(
-                                alternate__contains=layername).count() == 0:
-                            raise Exception(
-                                "No Layer with this name {}".format(layername))
-                    file_name = str(
-                        request.GET.get('file_name', "download.gpkg"))
-                    download_dir = GpkgLayer._get_new_dir(
-                        base_dir=_downloads_dir)
-                    file_path = os.path.join(download_dir, file_name)
-                    GpkgManager.postgis_as_gpkg(get_connection(), file_path,
-                                                layer_names)
-                    download_obj = ManagerDownload.objects.create(
-                        user=request.user, file_path=file_path)
-                    url = request.build_absolute_uri(
-                        reverse(
-                            'api_manager_download',
-                            kwargs={
-                                "resource_name":
-                                ManagerDownloadResource.Meta.resource_name,
-                                "pk":
-                                download_obj.id,
-                                "api_name":
-                                self._meta.api_name
-                            }))
-                    return self.create_response(request, {"download_url": url})
+                if len(layer_names) == 0:
+                    return self.get_err_response(
+                        request,
+                        "please provide layer_names as a query paramter ",
+                        http.HttpApplicationError)
+                for layername in layer_names:
+                    if Layer.objects.filter(
+                            alternate__contains=layername).count() == 0:
+                        return self.get_err_response(
+                            request,
+                            "No Layer with this name {}".format(layername),
+                            http.HttpApplicationError)
+                file_name = str(request.GET.get('file_name', "download.gpkg"))
+                download_dir = GpkgLayer._get_new_dir(base_dir=_downloads_dir)
+                file_path = os.path.join(download_dir, file_name)
+                GpkgManager.postgis_as_gpkg(get_connection(), file_path,
+                                            layer_names)
+                download_obj = ManagerDownload.objects.create(
+                    user=request.user, file_path=file_path)
+                url = request.build_absolute_uri(
+                    reverse(
+                        'api_manager_download',
+                        kwargs={
+                            "resource_name":
+                            ManagerDownloadResource.Meta.resource_name,
+                            "pk":
+                            download_obj.id,
+                            "api_name":
+                            self._meta.api_name
+                        }))
+                return self.create_response(request, {"download_url": url})
         except Exception as e:
             return self.get_err_response(request, e.message,
                                          http.HttpApplicationError)
-
-        return self.get_err_response(
-            request, "please provide layer_names as a query paramter ",
-            http.HttpAccepted)
 
     def layer_download_request(self, request, upload_id, layername, **kwargs):
         self.method_check(request, allowed=['get'])
@@ -505,7 +506,6 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             gs_pub.publish_postgis_layer(tablename, layername=gs_layername)
             try:
                 layer = geonode_pub.publish(gs_layername)
-                logger.error(layer)
                 if layer:
                     gpkg_style = stm.get_style(layername)
                     if gpkg_style:
