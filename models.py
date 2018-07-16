@@ -39,7 +39,10 @@ def package_path(instance, filename):
 class GpkgUpload(models.Model):
     user = models.ForeignKey(Profile, blank=True, null=True)
     package = models.FileField(
-        upload_to=package_path, validators=[validate_file_extension])
+        upload_to=package_path,
+        validators=[validate_file_extension],
+        null=False,
+        blank=False)
     uploaded_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 

@@ -18,7 +18,7 @@ from guardian.shortcuts import get_objects_for_user, get_perms
 
 from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
-
+from .decorators import time_it
 from .exceptions import GpkgLayerException
 from .forms import GpkgUploadForm
 from .handlers import GpkgManager, get_connection
@@ -37,6 +37,7 @@ logger = get_logger(__name__)
 @require_http_methods([
     'GET',
 ])
+@time_it
 def get_compatible_layers(request, upload_id, layername):
     layername = str(layername)
     permitted = get_objects_for_user(request.user, 'base.change_resourcebase')
@@ -45,19 +46,24 @@ def get_compatible_layers(request, upload_id, layername):
         obj = GpkgUpload.objects.get(id=upload_id)
         layers = []
         for layer in permitted_layers:
-            print obj.gpkg_manager.check_schema_geonode(
-                layername, str(layer.alternate))
-        layers = [{
-            "name": layer.alternate,
-            "urls": {
-                "reload_url":
-                reverse(
-                    'reload_layer',
-                    args=(upload_id, layername, layer.alternate))
-            }
-        } for layer in permitted_layers
-                  if obj.gpkg_manager.check_schema_geonode(
-                      layername, str(layer.alternate))]
+            try:
+                check = obj.gpkg_manager.check_schema_geonode(
+                    layername, str(layer.alternate))
+                lyr = {
+                    "name": layer.alternate,
+                    "deleted_fields": check.get("deleted_fields"),
+                    "new_fields": check.get("new_fields"),
+                    "urls": {
+                        "reload_url":
+                        reverse(
+                            'reload_layer',
+                            args=(upload_id, layername, layer.alternate))
+                    }
+                }
+                layers.append(lyr)
+            except Exception as e:
+                logger.error(e.message)
+
         data = {"status": "success", "layers": layers}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
@@ -206,6 +212,7 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
 @login_required
 @permission_required_or_403('gpkg_manager.publish_from_package',
                             (GpkgUpload, 'id', 'upload_id'))
+@time_it
 def publish_layer(request, upload_id, layername, publish_name=None):
     user = request.user
     layername = str(layername)

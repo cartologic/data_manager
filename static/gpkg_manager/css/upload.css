@@ -26,6 +26,10 @@
     margin: 5px
 }
 
+.panel-footer-text {
+    text-align: left
+}
+
 .custom-header {
     text-align: center;
     background: black;
@@ -40,6 +44,9 @@
 @media screen and (max-width: 1024px) {
     .layer-item {
         flex-direction: column;
+    }
+    .panel-footer-text {
+        text-align: center
     }
 }
 
