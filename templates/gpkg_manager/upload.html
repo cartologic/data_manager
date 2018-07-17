@@ -1,206 +1,46 @@
-{% extends "app_manager/app_install_base.html" %}
-{% load bootstrap_tags staticfiles i18n guardian_tags %}
-
-{% block title %} {{ block.super }} - {% trans "GeoPackage Manager" %} {% endblock %}
-{% block head %}
-    {{ block.super }}
-    <link rel="stylesheet" href="{% static 'gpkg_manager/css/upload.css' %}">
-    <link rel="stylesheet" href="{% static 'gpkg_manager/css/multi-select.dist.css' %}">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
-{% endblock %}
-{% block body %}
-    <div id="page-wrapper">
-        <div class="container-fluid" >
-            <div class="flex-element flex-space-between equal-area text-center flex-center">
-                <h1 class="text-wrap equal-area text-left">GeoPackage Manager</h1>
-                <button onclick="downloadModal()" class="btn btn-primary">Download</button>
-            </div>
-            <br>
-        <div class="well text-muted text-center js-upload-packages" style="padding-top: 4rem; padding-bottom: 4rem;">
-                <span class="glyphicon glyphicon-arrow-down" style="font-size: 4rem;"></span>
-                <h3>Click to Choose Packages or Drop Packages Here to Upload</h3>
-        </div>
-        {# 2. FILE INPUT TO BE USED BY THE PLUG-IN #}
-        <input id="fileupload" type="file" name="package"
-            style="display: none;"
-            accept=".gpkg, .GPKG"
-            multiple
-            data-url="{% url 'geopackage_upload' %}"
-            data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
-        </div>
-        <div class="row">
-            <div id="uploaded_list" class="container col-md-12">
-                    {% for upload in uploads  %}
-                    {% get_obj_perms request.user for upload as "package_perms" %}
-                    <div id="package-{{upload.id}}" class="container panel-group">
-                        <div class="panel panel-primary">
-                          <div class="panel-heading"> 
-                              <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
-                                  <span class="text-wrap equal-area text-left">{{upload.package_name}} </span> 
-                                  {% if "download_package" in package_perms %}
-                                  <a href="{{upload.package.url}}" class="btn btn-success equal-area glayer-actions">Download</a>
-                                  {% endif %}
-                                  {% if "delete_package" in package_perms %}
-                                  <button onclick="deletePackage('{% url 'geopackage_delete' upload_id=upload.id %}',{{upload.id}})" class="btn btn-danger equal-area glayer-actions">Delete</button>
-                                  {% endif %}
-                              </div>
-                          </div>
-                          <div class="panel-body">
-                            <ul class="list-group">
-                                {% for layer in upload.gpkg_manager.get_layers %}
-                                    <li class="list-group-item ">
-                                      <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
-                                          <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
-                                          <span class="equal-area">Type:{{layer.geometry_type_name}}</span> 
-                                          <span class="equal-area">Feature Count:{{layer.feature_count}}</span>
-                                          {% if "publish_from_package" in package_perms %}
-                                          <button class="btn btn-primary glayer-actions" onclick="showPublishModal('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}','{{layer.get_new_name}}')">Publish New</button>
-                                          <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Update</button>
-                                          {% endif %}
-                                      </div>
-                                      {% comment %}
-                                      {% if layer.geonode_layers %}
-                                      <hr>
-                                      <h6>Geonode Layers</h6>
-                                      <ul>
-                                      {% for glyr in layer.geonode_layers %}
-                                        <li>
-                                          <div class="flex-element flex-space-between equal-area text-center flex-center">
-                                              <span class="text-wrap equal-area text-left">Layer Name: {{glyr.alternate}}</span>
-                                              <button class="btn btn-primary glayer-actions" onclick="compareSchema('{% url 'compare_schema' upload_id=upload.id layername=layer.name glayername=glyr.alternate %}')">Check Schema</button>
-                                              <button class="btn btn-primary glayer-actions" onclick="publishLayer('{% url 'geopackage_publish' upload_id=upload.id layername=layer.name %}')">Update</button>
-                                              <button class="btn btn-primary glayer-actions" onclick="getCompatibleLayres('{% url 'compatible_layers' upload_id=upload.id layername=layer.name %}')">Overwrite</button>
-                                          </div>
-                                        </li>
-                                      {% endfor %}
-                                      </ul>
-                                      {% endif %}
-                                      {% endcomment %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                          </div>
-                          <div class="panel-footer">
-                            <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
-                                <span class="text-wrap equal-area text-left">Owner: {{upload.user.username}}</span> 
-                                <span class="equal-area text-right">uploaded At: {{upload.uploaded_at}}</span> 
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {% empty %}
-                      <h3 id="no-uploads">No GeoPackages Please Upload New</h3>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    <div class="modal fade" id="modal-progress" data-backdrop="static" data-keyboard="false">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h4 class="modal-title">Uploading...</h4>
-                </div>
-                <div class="modal-body">
-                  <div class="progress">
-                    <div id="upload-progressbar" class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-    <div class="modal fade" id="modal-publishing" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Processing...</h4>
-          </div>
-          <div class="modal-body">
-            <div class="progress">
-              <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" id="modal-compatible-layers" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Portal Layers</h4>
-          </div>
-          <div class="modal-body compatible-layers">
-            <div class="progress">
-              <div class="progress-bar progress-bar-striped active" role="progressbar" style="width: 100%;">Processing</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" id="modal-prepublish" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Publish Layer</h4>
-          </div>
-          <div class="modal-body">
-              <div class="form-group">
-                  <label for="publishname">Layername:</label>
-                  <input type="text" maxlength="63" class="form-control" required id="publishname">
-              </div>
-              <button id="publish-btn" class="btn btn-primary" >Publish</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" id="modal-fields" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Schema</h4>
-          </div>
-          <div class="modal-body" id="schema-body">
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" id="modal-downloader" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Download Layers</h4>
-          </div>
-          <div class="modal-body">
-              <div class="download-selector">
-                  <select multiple="multiple" id="layer-selector" name="layer-selector[]">
-                      {% for layer in download_layers %}
-                      <option value='{{layer.alternate}}'>{{layer.alternate}}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <br>
-              <div class="text-center">
-                  <button id="download-layers" class="btn btn-primary">Download Selected</button>
-              </div>
-              
-          </div>
-        </div>
-      </div>
-    </div>
-{% endblock %}
-{% block extra_script %}
-  <script src="{% static 'gpkg_manager/js/jquery.ui.widget.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.iframe-transport.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.fileupload.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.multi-select.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.quicksearch.js' %}"></script>
+{% load static cartoview_tags basic_viewer %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GeoPackage Manager</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1, user-scalable=no" />  
+    <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}cartoview/img/icon.png" />
+    <link rel="stylesheet" href="{% static 'gpkg_manager/dist/GeopackageManager.css' %}">
+    <link rel="stylesheet" href="{% static 'gpkg_manager/dist/vendors-GeopackageManager.css' %}">
+    <style>
+        html,body {
+            height: 100%;
+            margin: 0px;
+        }
+        #root{
+            height: 100%
+        }
+    </style>
+</head>
+<body>
+<div style="height: 100%;" id="react-app"></div>
+<script src="{% static 'gpkg_manager/dist/vendors-GeopackageManager-chunk.js' %}"></script>
+  <script src="{% static 'gpkg_manager/dist/GeopackageManager.bundle.js' %}"></script>
   <script>
     const urls={
-      downloadLayers:"{% url 'geopackage_download' %}"
+      uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      layersURL:"{% url 'api_dispatch_list'  api_name='api' resource_name='layers' %}",
+      downloadURL:"{% url 'api_download_request'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      permissionsURL:"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      publishURL:function(upload_id,layername){
+        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/publish/"
+      },
+      compareLayerURL:function(upload_id,layername,glayername){
+        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
+      }
     }
+    var props={
+      urls:urls,
+      username:"{{request.user.username}}",
+      token:"{{request.user.api_key}}",
+    }
+    GeopackageManagerRenderer.show("react-app",props)
   </script>
-  <script src="{% static 'gpkg_manager/js/upload.js' %}"></script>
- {% endblock %}
+</body>
+</html>
