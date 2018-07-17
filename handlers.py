@@ -22,6 +22,7 @@ logger = get_logger(__name__)
 class GpkgManager(object):
     def __init__(self, package_path, is_postgis=False):
         self.path = package_path
+        self.is_postgis = is_postgis
         self.get_source(is_postgis=is_postgis)
 
     @staticmethod
@@ -74,8 +75,8 @@ class GpkgManager(object):
                        for field in layer2.get_full_schema()]
         schema1.sort(key=lambda field: field[0])
         schema2.sort(key=lambda field: field[0])
-        deleted_fields = [field for field in schema1 if field not in schema2]
-        new_fields = [field for field in schema2 if field not in schema1]
+        new_fields = [field for field in schema1 if field not in schema2]
+        deleted_fields = [field for field in schema2 if field not in schema1]
         deleted_fields.sort(key=lambda field: field[0])
         new_fields.sort(key=lambda field: field[0])
         return {
@@ -155,6 +156,7 @@ class GpkgManager(object):
                          connectionString,
                          overwrite=True,
                          temporary=False,
+                         launder=False,
                          name=None):
         source = self.open_source(connectionString, is_postgres=True)
         layer = self.source.GetLayerByName(layername)
@@ -162,7 +164,11 @@ class GpkgManager(object):
         layer = GpkgLayer(layer, source)
 
         return layer.copy_to_source(
-            source, overwrite=overwrite, temporary=temporary, name=name)
+            source,
+            overwrite=overwrite,
+            temporary=temporary,
+            launder=launder,
+            name=name)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
