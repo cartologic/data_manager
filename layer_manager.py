@@ -101,10 +101,12 @@ class GpkgLayer(object):
                        dest_source,
                        overwrite=True,
                        temporary=False,
+                       launder=False,
                        name=None):
         options = [
             'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-            'TEMPORARY={}'.format("OFF" if not temporary else "ON")
+            'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
+            'LAUNDER={}'.format("YES" if launder else "NO"),
         ]
         name = self.name if not name else name
         geom_schema = self.geometry_fields_schema()
