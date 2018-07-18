@@ -62,7 +62,7 @@ class GpkgUpload(models.Model):
 
     @property
     def gpkg_manager(self):
-        return GpkgManager(self.package.path)
+        return GpkgManager(self.package.path, is_postgis=False)
 
     @property
     def style_manager(self):

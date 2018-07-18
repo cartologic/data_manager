@@ -79,6 +79,11 @@ class GeoserverPublisher(object):
         try:
             logger.warning("Clearing Layer Cache")
             helpers._invalidate_geowebcache_layer(typename)
+            # the following line for compatiblilty 2.8rc11 and 2.8
+            try:
+                helpers._stylefilterparams_geowebcache_layer(typename)
+            except:
+                pass
             logger.warning("Layer Cache Cleared")
         except BaseException as e:
             logger.error(e.message)

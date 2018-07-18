@@ -54,6 +54,8 @@ class LayerItem extends React.Component {
         this.state = {
             schema: null,
             schemaLoading: null,
+            reloadLayerLoading: false,
+            replaceLayerLoading: false,
             expand: false
         }
         const { token, username } = this.props
@@ -82,24 +84,60 @@ class LayerItem extends React.Component {
             this.setState({ expand: !expand })
         }
     }
+    reloadLayer = () => {
+        const { urls, layer, currentLayer } = this.props
+        const url = urls.reloadURL(currentLayer.upload_id, currentLayer.name, layer.alternate)
+        this.requests.doGet(url).then(result => {
+            if (result.error_message) {
+                this.setState({ reloadLayerLoading: false }, alert(result.error_message))
+            } else {
+                this.setState({ reloadLayerLoading: false }, () => alert(result.status))
+            }
+        }).catch(function (err) {
+            this.setState({ reloadLayerLoading: false }, alert(err.message))
+        }.bind(this))
+    }
+    startReloadLayer = () => {
+        this.setState({ reloadLayerLoading: true }, this.reloadLayer)
+    }
+    replaceLayer = () => {
+        const { layer, currentLayer } = this.props
+        const url = `${currentLayer.urls.publish_url}?replace=true&publish_name=${layer.alternate.split(":").pop()}`
+        this.requests.doGet(url).then(result => {
+            if (result.error_message) {
+                this.setState({ replaceLayerLoading: false }, alert(result.error_message))
+            } else {
+                this.setState({ replaceLayerLoading: false }, () => window.location.href = result.layer_url)
+            }
+        }).catch(function (err) {
+            this.setState({ replaceLayerLoading: false }, alert(err.message))
+        }.bind(this))
+    }
+    startReplaceLayer = () => {
+        this.setState({ replaceLayerLoading: true }, this.replaceLayer)
+    }
     render() {
         const { layer, classes } = this.props
-        const { schema, schemaLoading, expand } = this.state
+        const { schema, schemaLoading, expand, reloadLayerLoading, replaceLayerLoading } = this.state
         return (
             <Paper key={layer.id} className={classes.layerItem} elevation={2}>
                 <div className={classes.layerItemActions}>
                     <Typography noWrap className={classNames(classes.flexGrow, classes.button)} variant="subheading">{layer.title}</Typography>
                     {schemaLoading && <CircularProgress className={classes.progress} thickness={5} />}
-                    <Button onClick={this.compareSchema} variant="outlined" color="primary" className={classes.button}>
-                        {"Compare Schema"}
-                    </Button>
+                    {reloadLayerLoading && <CircularProgress color="default" className={classes.progress} thickness={5} />}
+                    {replaceLayerLoading && <CircularProgress color="secondary" className={classes.progress} thickness={5} />}
+                    <Tooltip title="Comapare The Schema of this Layer With the Target Layer and return the result">
+                        <Button onClick={this.compareSchema} variant="outlined" color="primary" className={classes.button}>
+                            {"Compare Schema"}
+                        </Button>
+                    </Tooltip>
                     <Tooltip title="Completly Replace Layer i.e(replace Layer Portal Record, Styles, Database Table, Geoserver Layer and thumbnails)">
-                        <Button variant="outlined" color="primary" className={classes.button}>
+                        <Button onClick={this.startReplaceLayer} variant="outlined" color="secondary" className={classes.button}>
                             {"Replace"}
                         </Button>
                     </Tooltip>
                     <Tooltip title="Replace Current Database Table With This One">
-                        <Button variant="outlined" color="primary" className={classes.button}>
+                        <Button onClick={this.startReloadLayer} variant="outlined" color="default" className={classes.button}>
                             {"Update(DB Table Replacement)"}
                         </Button>
                     </Tooltip>

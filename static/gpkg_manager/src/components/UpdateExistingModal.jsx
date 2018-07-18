@@ -12,7 +12,6 @@ import Input from '@material-ui/core/Input'
 import InputAdornment from '@material-ui/core/InputAdornment'
 import InputLabel from '@material-ui/core/InputLabel'
 import LayerItem from './LayerItem'
-import Paper from '@material-ui/core/Paper'
 import PropTypes from 'prop-types'
 import React from 'react'
 import SearchIcon from '@material-ui/icons/Search'
@@ -81,7 +80,7 @@ class UpdateExistingModal extends React.Component {
 
     render() {
         const { layers, layersLoading } = this.state
-        const { replaceLayer, currentLayer, updateExistingModalOpen, handleUpdateExistingModal, updateExistingLoading, classes, updateError } = this.props
+        const { currentLayer, updateExistingModalOpen, handleUpdateExistingModal, updateExistingLoading, classes, updateError } = this.props
         return (
             <Dialog
                 fullScreen
@@ -137,7 +136,6 @@ UpdateExistingModal.propTypes = {
     token: PropTypes.string.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
-    replaceLayer: PropTypes.func.isRequired,
     handleUpdateExistingModal: PropTypes.func.isRequired,
     updateExistingModalOpen: PropTypes.bool.isRequired,
     updateExistingLoading: PropTypes.bool.isRequired,

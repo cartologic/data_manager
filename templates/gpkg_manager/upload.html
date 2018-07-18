@@ -33,6 +33,9 @@
       },
       compareLayerURL:function(upload_id,layername,glayername){
         return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
+      },
+      reloadURL:function(upload_id,layername,glayername){
+        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
       }
     }
     var props={
