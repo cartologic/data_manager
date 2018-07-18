@@ -16,6 +16,8 @@ const styles = theme => ({
         width: '100%',
         marginTop: theme.spacing.unit * 2,
         marginBottom: theme.spacing.unit * 2,
+        boxSizing: 'border-box',
+        padding: theme.spacing.unit,
     },
     textCenter: {
         textAlign: 'center'
@@ -108,7 +110,7 @@ class UploadsList extends React.Component {
         const { classes, uploads } = this.props
         const { publishModalOpen, publishLoading, publishError, publishName, updateExistingLoading, updateError, updateExistingModalOpen, currentLayer } = this.state
         return (
-            <Paper elevation={2} className={classes.root}>
+            <div className={classes.root}>
                 <PublishModal handlePublishName={this.handlePublishName} publishLoading={publishLoading} publishError={publishError} publishName={publishName} handlPublishModal={this.handlPublishModal} publishLayer={this.publishLayer} publishModalOpen={publishModalOpen} />
                 <UpdateExistingModal currentLayer={currentLayer} updateExistingLoading={updateExistingLoading} updateError={updateError} handleUpdateExistingModal={this.handleUpdateExistingModal} replaceLayer={this.replaceLayer} updateExistingModalOpen={updateExistingModalOpen} />
                 <Divider />
@@ -116,7 +118,7 @@ class UploadsList extends React.Component {
                 {uploads && uploads.map((upload, index) => {
                     return <UploadListItem setCurrentLayerOpenUpdateModal={this.setCurrentLayerOpenUpdateModal} upload={upload} setCurrentLayerOpenPublishModal={this.setCurrentLayerOpenPublishModal} key={index} />
                 })}
-            </Paper>
+            </div>
         )
     }
 }

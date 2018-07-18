@@ -48,7 +48,9 @@ const styles = theme => ({
         flexDirection: 'column',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        textAlign: 'center'
     },
     root: {
         height: `calc( 100% - ${theme.mixins.toolbar['@media (min-width:600px)'].minHeight}px)`,
@@ -59,7 +61,9 @@ const styles = theme => ({
         ...theme.mixins.gutters(),
         paddingTop: theme.spacing.unit * 2,
         paddingBottom: theme.spacing.unit * 2,
-        overflowX: 'scroll'
+        overflowX: 'scroll',
+        zIndex: 0,
+        background: '#f3f3f3'
 
     },
 })
