@@ -31,7 +31,7 @@ class UploadItem extends Component {
             // console.log(result)
         }, (evt) => {
             if (evt.lengthComputable) {
-                let percentComplete = (evt.loaded / evt.total) * 100
+                let percentComplete = Math.ceil((evt.loaded / evt.total) * 100)
                 this.setState({ progress: percentComplete })
             }
         }, (xhr) => {

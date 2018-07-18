@@ -99,25 +99,6 @@ class GeopackageManager extends Component {
         let newFiles = files.filter(tFile => tFile !== file)
         this.setState({ files: newFiles })
     }
-    // downloadSelectedLayers = () => {
-    //     // const { urls } = this.props
-    //     // const { downlaodLayers } = this.state
-    //     // const layers = downlaodLayers.map(layer => layer.typename.split(":").pop())
-    //     // const url = `${urls.downloadURL}?layer_names=${layers.join(',')}`
-    //     // this.setState({ downloadModalOpen: false }, () => {
-    //     //     this.setState({ progressModalOpen: true }, () => {
-    //     //         this.requests.doGet(url).then(result => {
-    //     //             if (result.download_url) {
-    //     //                 this.setState({ progressModalOpen: false, progressMessage: null }, () => { window.location.href = result.download_url })
-    //     //             } else {
-    //     //                 this.setState({ progressModalOpen: false, progressMessage: null }, () => console.error(result.error_message))
-    //     //             }
-    //     //         }).catch(error => {
-    //     //             console.error(error.message)
-    //     //         })
-    //     //     })
-    //     // })
-    // }
     render() {
         const { classes, uploads, uploadsLoading } = this.props
         const { files } = this.state

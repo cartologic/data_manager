@@ -117,8 +117,12 @@ class UploadView(View):
             request,
             "gpkg_manager/upload.html",
             context={
-                'uploads': uploads,
-                'download_layers': permitted_layers
+                'uploads':
+                uploads,
+                'download_layers': [{
+                    "typename": layer.alternate,
+                    "title": layer.title
+                } for layer in permitted_layers]
             })
 
     @method_decorator(login_required)

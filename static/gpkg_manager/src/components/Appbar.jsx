@@ -1,8 +1,8 @@
 import 'typeface-roboto'
 
 import AppBar from '@material-ui/core/AppBar'
-import IconButton from '@material-ui/core/IconButton'
-import MenuIcon from '@material-ui/icons/Menu'
+import Button from '@material-ui/core/Button'
+import DownloadModal from './DownloadModal'
 import PropTypes from 'prop-types'
 import React from 'react'
 import Toolbar from '@material-ui/core/Toolbar'
@@ -18,19 +18,31 @@ const styles = {
     }
 }
 
-function GeopackageAppBar(props) {
-    const { classes, title } = props
-    return (
-        <div className={classes.root}>
-            <AppBar position="static">
-                <Toolbar>
-                    <Typography variant="title" color="inherit" className={classes.flex}>
-                        {title}
-                    </Typography>
-                </Toolbar>
-            </AppBar>
-        </div>
-    )
+class GeopackageAppBar extends React.Component {
+    state = {
+        downloadModalOpen: false
+    }
+    handleDownloadModal = () => {
+        const { downloadModalOpen } = this.state
+        this.setState({ downloadModalOpen: !downloadModalOpen })
+    }
+    render() {
+        const { downloadModalOpen } = this.state
+        const { classes, title } = this.props
+        return (
+            <div className={classes.root}>
+                <AppBar position="static">
+                    <Toolbar>
+                        <Typography variant="title" color="inherit" className={classes.flex}>
+                            {title}
+                        </Typography>
+                        <Button onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
+                    </Toolbar>
+                </AppBar>
+                <DownloadModal handleDownloadModal={this.handleDownloadModal} downloadModalOpen={downloadModalOpen} />
+            </div>
+        )
+    }
 }
 GeopackageAppBar.propTypes = {
     classes: PropTypes.object.isRequired,

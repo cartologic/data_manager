@@ -38,6 +38,7 @@
         return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
       }
     }
+    var downloadableLayers={{download_layers|dump_json}}
     var props={
       urls:urls,
       username:"{{request.user.username}}",
