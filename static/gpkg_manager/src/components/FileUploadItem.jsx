@@ -27,8 +27,6 @@ class UploadItem extends Component {
         let formData = new FormData()
         formData.append("package", file)
         this.requests.uploadWithProgress(urls.uploadsURL, formData, (result) => {
-            // result = JSON.parse(result)
-            // console.log(result)
         }, (evt) => {
             if (evt.lengthComputable) {
                 let percentComplete = Math.ceil((evt.loaded / evt.total) * 100)
