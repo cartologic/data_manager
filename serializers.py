@@ -77,7 +77,7 @@ class EsriSerializer(object):
         return self.geometry_types_mapping[self._data["geometryType"]]
 
     def get_name(self):
-        return self._data["name"].lower()
+        return SLUGIFIER(self._data["name"].lower())
 
     def get_projection(self):
         projection_number = None
