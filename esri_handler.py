@@ -10,9 +10,12 @@ from esridump.dumper import EsriDumper
 
 from cartoview.log_handler import get_logger
 
+from .exceptions import EsriException
+from .handlers import GpkgManager, get_connection
+from .layer_manager import GpkgLayer
 from .serializers import EsriSerializer
 from .utils import SLUGIFIER
-from .handlers import (get_connection, GpkgManager)
+
 logger = get_logger(__name__)
 
 
@@ -21,16 +24,22 @@ class EsriHandler(EsriDumper):
         s = EsriSerializer(self._layer_url)
         return s
 
+    def get_geom_coords(self, geom_dict):
+        if "rings" in geom_dict:
+            return geom_dict["rings"]
+        elif "paths" in geom_dict:
+            return geom_dict["paths"] if len(
+                geom_dict["paths"]) > 1 else geom_dict["paths"][0]
+        else:
+            return geom_dict["coordinates"]
+
     def create_feature(self, layer, featureDict, expected_type, srs=None):
         try:
-            geom_type = featureDict["geometry"]["type"]
+            geom_dict = featureDict["geometry"]
+            geom_type = geom_dict["type"]
             feature = ogr.Feature(layer.GetLayerDefn())
-            f_json = json.dumps({
-                "type":
-                geom_type,
-                "coordinates":
-                featureDict["geometry"]["coordinates"]
-            })
+            coords = self.get_geom_coords(geom_dict)
+            f_json = json.dumps({"type": geom_type, "coordinates": coords})
             geom = ogr.CreateGeometryFromJson(f_json)
             if geom and srs:
                 geom.Transform(srs)
@@ -50,6 +59,8 @@ class EsriHandler(EsriDumper):
                         temporary=False,
                         launder=False,
                         name=None):
+        source = None
+        layer = None
         es = self.get_esri_serializer()
         if not name:
             name = es.get_name()
@@ -83,7 +94,12 @@ class EsriHandler(EsriDumper):
                 next_feature = feature_iter.next()
                 self.create_feature(
                     layer, next_feature, gtype, srs=coord_trans)
-        except StopIteration:
-            pass
-        layer.CommitTransaction()
-        source.FlushCache()
+        except (StopIteration, EsriException), e:
+            if isinstance(e, EsriException):
+                layer = None
+        finally:
+            if source and layer:
+                layer.CommitTransaction()
+                source.FlushCache()
+                layer = GpkgLayer(layer, source)
+            return layer
