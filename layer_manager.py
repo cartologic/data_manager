@@ -4,15 +4,17 @@ import shutil
 import time
 import zipfile
 from uuid import uuid4
-from .constants import _downloads_dir, _temp_dir
+
 from geonode.layers.models import Layer
 
 from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
 
+from .constants import _downloads_dir, _temp_dir
 from .decorators import FORMAT_EXT, ensure_supported_format
 from .exceptions import SourceException
 from .utils import SLUGIFIER
+
 try:
     import ogr
 except:

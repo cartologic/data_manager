@@ -10,10 +10,11 @@ from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
 from geonode.layers.models import Layer
-from .exceptions import GpkgLayerException
+
 from cartoview.log_handler import get_logger
 
 from .constants import POSTGIS_OPTIONS
+from .exceptions import GpkgLayerException
 from .layer_manager import GpkgLayer, SourceException
 
 logger = get_logger(__name__)
