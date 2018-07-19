@@ -4,7 +4,7 @@ try:
 except:
     from osgeo import ogr, osr
 import requests
-
+from .exceptions import EsriFeatureLayerException
 from .utils import SLUGIFIER
 
 
@@ -53,8 +53,11 @@ class EsriSerializer(object):
     def get_data(self):
         req = requests.get(self._url + "?f=json")
         self._data = req.json()
+        if not self.is_feature_layer:
+            raise EsriFeatureLayerException(
+                "This URL {} Is Not A Feature Layer".format(self._url))
 
-    def build_fields(self):
+    def get_fields_list(self):
         data_fields = self._data['fields']
         assert data_fields
         data_fields = [
@@ -62,6 +65,10 @@ class EsriSerializer(object):
             if field["type"] in self.field_types_mapping.keys()
             and field["name"] not in self.ignored_fields
         ]
+        return data_fields
+
+    def build_fields(self):
+        data_fields = self.get_fields_list()
         field_defns = []
         for field in data_fields:
             field_type = field["type"]
@@ -80,6 +87,13 @@ class EsriSerializer(object):
 
     def get_geometry_type(self):
         return self.geometry_types_mapping[self._data["geometryType"]]
+
+    @property
+    def is_feature_layer(self):
+        return self._data['type'] == "Feature Layer"
+
+    def attributes_convertor(self, attributes):
+        raise NotImplementedError("To Be Implemented")
 
     def get_name(self):
         return SLUGIFIER(self._data["name"].lower())

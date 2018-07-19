@@ -9,3 +9,7 @@ class GpkgLayerException(Exception):
 
 class EsriException(Exception):
     pass
+
+
+class EsriFeatureLayerException(Exception):
+    pass
