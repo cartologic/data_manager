@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 try:
     import ogr
+    import osr
 except:
-    from osgeo import ogr
+    from osgeo import ogr, osr
 import json
 
 from esridump.dumper import EsriDumper
@@ -20,7 +21,7 @@ class EsriHandler(EsriDumper):
         s = EsriSerializer(self._layer_url)
         return s
 
-    def create_feature(self, layer, featureDict, expected_type):
+    def create_feature(self, layer, featureDict, expected_type, srs=None):
         try:
             geom_type = featureDict["geometry"]["type"]
             feature = ogr.Feature(layer.GetLayerDefn())
@@ -31,6 +32,8 @@ class EsriHandler(EsriDumper):
                 featureDict["geometry"]["coordinates"]
             })
             geom = ogr.CreateGeometryFromJson(f_json)
+            if geom and srs:
+                geom.Transform(srs)
             if geom and expected_type == geom.GetGeometryType():
                 feature.SetGeometry(geom)
                 for prop, val in featureDict["properties"].items():
@@ -43,7 +46,6 @@ class EsriHandler(EsriDumper):
             logger.error(e)
 
     def esri_to_postgis(self,
-                        url,
                         overwrite=True,
                         temporary=False,
                         launder=False,
@@ -63,19 +65,24 @@ class EsriHandler(EsriDumper):
                 'LAUNDER={}'.format("YES" if launder else "NO"),
             ]
             gtype = es.get_geometry_type()
+            coord_trans = None
+            OSR_WGS84_REF = osr.SpatialReference()
+            OSR_WGS84_REF.ImportFromEPSG(4326)
+            projection = es.get_projection()
+            if projection != OSR_WGS84_REF:
+                coord_trans = osr.CoordinateTransformation(
+                    OSR_WGS84_REF, projection)
             layer = source.CreateLayer(
-                str(name),
-                srs=es.get_projection(),
-                geom_type=gtype,
-                options=options)
+                str(name), srs=projection, geom_type=gtype, options=options)
             assert layer
             for field in es.build_fields():
                 layer.CreateField(field)
             layer.StartTransaction()
-            GpkgManager.create_feature(layer, first_feature, gtype)
+            self.create_feature(layer, first_feature, gtype, srs=coord_trans)
             while True:
                 next_feature = feature_iter.next()
-                GpkgManager.create_feature(layer, next_feature, gtype)
+                self.create_feature(
+                    layer, next_feature, gtype, srs=coord_trans)
         except StopIteration:
             pass
         layer.CommitTransaction()
