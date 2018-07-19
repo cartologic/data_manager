@@ -176,7 +176,7 @@ class StyleManager(object):
                   stylename,
                   sld_body,
                   default=False):
-        sld_body = self.convert_sld_attributes(sld_body)
+        # sld_body = self.convert_sld_attributes(sld_body)
         with self.db_session() as session:
             cursor = session.cursor()
             cursor.execute(

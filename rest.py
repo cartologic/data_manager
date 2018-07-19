@@ -498,8 +498,9 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 if layer:
                     gpkg_style = stm.get_style(layername)
                     if gpkg_style:
-                        sld_body = stm.convert_sld_attributes(
-                            gpkg_style.styleSLD)
+                        # sld_body = stm.convert_sld_attributes(
+                        #     gpkg_style.styleSLD)
+                        sld_body = gpkg_style.styleSLD
                         name = gpkg_style.styleName
                         # TODO: handle none default styles
                         # useDefault = gpkg_style.useAsDefault
