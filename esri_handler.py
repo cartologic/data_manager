@@ -5,14 +5,18 @@ try:
 except:
     from osgeo import ogr, osr
 import json
+from uuid import uuid4
 
 from esridump.dumper import EsriDumper
-
+from geonode.people.models import Profile
+from .style_manager import StyleManager
+from ags2sld.handlers import Layer as AgsLayer
 from cartoview.log_handler import get_logger
-
+import os
 from .exceptions import EsriException
 from .handlers import GpkgManager, get_connection
 from .layer_manager import GpkgLayer
+from .publishers import GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
 from .utils import SLUGIFIER
 
@@ -54,16 +58,34 @@ class EsriHandler(EsriDumper):
         except Exception as e:
             logger.error(e)
 
+    def _unique_name(self, name):
+        if len(name) > 63:
+            name = name[:63]
+        if not GpkgLayer.check_geonode_layer(name):
+            return str(name)
+        suffix = uuid4().__str__().split('-').pop()
+        if len(name) < (63 - (len(suffix) + 1)):
+            name += "_" + suffix
+        else:
+            name = name[:((63 - len(suffix)) - 2)] + "_" + suffix
+
+        return self._unique_name(SLUGIFIER(name))
+
+    def get_new_name(self, name):
+        name = SLUGIFIER(name.lower())
+        return self._unique_name(name)
+
     def esri_to_postgis(self,
-                        overwrite=True,
+                        overwrite=False,
                         temporary=False,
                         launder=False,
                         name=None):
         source = None
         layer = None
+        gpkg_layer = None
         es = self.get_esri_serializer()
         if not name:
-            name = es.get_name()
+            name = self.get_new_name(es.get_name())
         feature_iter = iter(self)
         try:
             first_feature = feature_iter.next()
@@ -85,7 +107,6 @@ class EsriHandler(EsriDumper):
                     OSR_WGS84_REF, projection)
             layer = source.CreateLayer(
                 str(name), srs=projection, geom_type=gtype, options=options)
-            assert layer
             for field in es.build_fields():
                 layer.CreateField(field)
             layer.StartTransaction()
@@ -95,11 +116,59 @@ class EsriHandler(EsriDumper):
                 self.create_feature(
                     layer, next_feature, gtype, srs=coord_trans)
         except (StopIteration, EsriException), e:
+            logger.error(e.message)
             if isinstance(e, EsriException):
                 layer = None
         finally:
             if source and layer:
                 layer.CommitTransaction()
                 source.FlushCache()
-                layer = GpkgLayer(layer, source)
-            return layer
+                gpkg_layer = GpkgLayer(layer, source)
+                source = None
+                layer = None
+            return gpkg_layer
+
+    def publish_to_geonode(self,
+                           overwrite=False,
+                           temporary=False,
+                           launder=False,
+                           name=None):
+        try:
+            user = Profile.objects.filter(is_superuser=True).first()
+            layer = self.esri_to_postgis(overwrite, temporary, launder, name)
+            if not layer:
+                raise Exception("failed to copy to postgis")
+            gs_layername = layer.get_new_name()
+            gs_pub = GeoserverPublisher()
+
+            geonode_pub = GeonodePublisher(owner=user)
+            gs_pub.publish_postgis_layer(gs_layername, layername=gs_layername)
+            geonode_layer = geonode_pub.publish(gs_layername)
+            if geonode_layer:
+                logger.info(geonode_layer.alternate)
+                agsURL, agsId = self._layer_url.rsplit('/', 1)
+                tmp_dir = GpkgLayer._get_new_dir()
+                ags_layer = AgsLayer(
+                    agsURL + "/", int(agsId), dump_folder=tmp_dir)
+                ags_layer.dump_sld_file()
+                sld_path = None
+                png_path = None
+                for file in os.listdir(tmp_dir):
+                    if file.endswith(".png"):
+                        png_path = os.path.join(tmp_dir, file)
+                    if file.endswith(".sld"):
+                        sld_path = os.path.join(tmp_dir, file)
+                if sld_path:
+                    sld_body = None
+                    with open(sld_path, 'r') as sld_file:
+                        sld_body = sld_file.read()
+                    stm = StyleManager(sld_path)
+                    style = stm.upload_style(
+                        gs_layername, sld_body, overwrite=True)
+                    stm.set_default_layer_style(geonode_layer.alternate,
+                                                style.name)
+                    geonode_layer.default_style = style
+                    geonode_layer.save()
+
+        except Exception as e:
+            logger.error(e.message)
