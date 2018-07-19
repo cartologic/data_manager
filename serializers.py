@@ -29,7 +29,12 @@ class EsriSerializer(object):
         "esriGeometryPoint": ogr.wkbPoint,
         "esriGeometryMultipoint": ogr.wkbMultiPoint,
         "esriGeometryPolyline": ogr.wkbLineString,
-        "esriGeometryLine": ogr.wkbLineString
+        "esriGeometryLine": ogr.wkbLineString,
+        "esriGeometryCircularArc": ogr.wkbCurve,
+        "esriGeometryEllipticArc": ogr.wkbCircularString,
+        "esriGeometryEnvelope": ogr.wkbPolygon,
+        "esriGeometryRing": ogr.wkbPolygon,
+        "esriGeometryPath": ogr.wkbLineString,
     }
     ogr_geometry_types_mapping = {
         "Polygon": ogr.wkbPolygon,
