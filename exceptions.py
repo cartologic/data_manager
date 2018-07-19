@@ -5,3 +5,7 @@ class SourceException(Exception):
 
 class GpkgLayerException(Exception):
     pass
+
+
+class EsriException(Exception):
+    pass
