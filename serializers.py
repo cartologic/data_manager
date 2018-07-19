@@ -1,5 +1,6 @@
 try:
-    import ogr, osr
+    import ogr
+    import osr
 except:
     from osgeo import ogr, osr
 import requests
@@ -76,7 +77,7 @@ class EsriSerializer(object):
         return self.geometry_types_mapping[self._data["geometryType"]]
 
     def get_name(self):
-        return self._data["name"]
+        return self._data["name"].lower()
 
     def get_projection(self):
         projection_number = None
