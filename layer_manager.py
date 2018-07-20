@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
-import time
 import zipfile
 from uuid import uuid4
 
 from geonode.layers.models import Layer
 
-from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
 
 from .constants import _downloads_dir, _temp_dir
 from .decorators import FORMAT_EXT, ensure_supported_format
 from .exceptions import SourceException
-from .utils import SLUGIFIER
+from .utils import SLUGIFIER, get_new_dir
 
 try:
     import ogr
@@ -133,11 +131,7 @@ class GpkgLayer(object):
 
     @staticmethod
     def _get_new_dir(base_dir=_temp_dir):
-        rand_str = uuid4().__str__().replace('-', '')[:8]
-        timestr = time.strftime("%Y/%m/%d/%H/%M/%S")
-        target = os.path.join(base_dir, timestr, rand_str)
-        create_direcotry(target)
-        return target
+        get_new_dir(base_dir=base_dir)
 
     @staticmethod
     def _zip(src, dst):

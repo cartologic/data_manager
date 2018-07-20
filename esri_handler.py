@@ -18,7 +18,7 @@ from .handlers import GpkgManager, get_connection
 from .layer_manager import GpkgLayer
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
-from .utils import SLUGIFIER
+from .utils import SLUGIFIER, get_new_dir
 
 logger = get_logger(__name__)
 
@@ -147,7 +147,7 @@ class EsriHandler(EsriDumper):
             if geonode_layer:
                 logger.info(geonode_layer.alternate)
                 agsURL, agsId = self._layer_url.rsplit('/', 1)
-                tmp_dir = GpkgLayer._get_new_dir()
+                tmp_dir = get_new_dir()
                 ags_layer = AgsLayer(
                     agsURL + "/", int(agsId), dump_folder=tmp_dir)
                 ags_layer.dump_sld_file()
