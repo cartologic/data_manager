@@ -3,7 +3,7 @@ import json
 import sys
 import uuid
 from decimal import Decimal
-
+import os
 import requests
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -73,6 +73,20 @@ class GeoserverPublisher(object):
                 self.workspace, layername))
         except Exception as e:
             logger.error(e.message)
+
+    def upload_file(
+            self, file,
+            rel_path="/workspaces/{}/styles".format(DEFAULT_WORKSPACE)):
+        url = urljoin(self.base_url, "rest/", "resource", rel_path,
+                      os.path.basename(file.name))
+        req = requests.put(
+            url,
+            data=file.read(),
+            headers={'Content-Type': 'application/octet-stream'},
+            auth=HTTPBasicAuth(self.username, self.password))
+        if req.status_code == 201:
+            return True
+        return False
 
     def remove_cached(self, typename):
         import geonode.geoserver.helpers as helpers

@@ -152,10 +152,12 @@ class EsriHandler(EsriDumper):
                     agsURL + "/", int(agsId), dump_folder=tmp_dir)
                 ags_layer.dump_sld_file()
                 sld_path = None
-                png_path = None
+                icon_paths = []
                 for file in os.listdir(tmp_dir):
                     if file.endswith(".png"):
-                        png_path = os.path.join(tmp_dir, file)
+                        icon_paths.append(os.path.join(tmp_dir, file))
+                    if file.endswith(".svg"):
+                        icon_paths.append(os.path.join(tmp_dir, file))
                     if file.endswith(".sld"):
                         sld_path = os.path.join(tmp_dir, file)
                 if sld_path:
@@ -169,6 +171,13 @@ class EsriHandler(EsriDumper):
                                                 style.name)
                     geonode_layer.default_style = style
                     geonode_layer.save()
+                if len(icon_paths) > 0:
+                    for icon_path in icon_paths:
+                        uploaded = gs_pub.upload_file(open(icon_path))
+                        if not uploaded:
+                            logger.error("Failed To Upload SLD Icon {}".format(
+                                icon_path))
+                    gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
             logger.error(e.message)
