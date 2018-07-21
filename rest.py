@@ -3,6 +3,7 @@ import mimetypes
 import os
 from distutils.util import strtobool
 
+from celery.result import AsyncResult
 from django.conf.urls import url
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -13,7 +14,6 @@ from geonode.layers.models import Layer
 from geonode.layers.views import _resolve_layer
 from guardian.shortcuts import get_objects_for_user, get_perms
 from tastypie import fields, http
-from .auth import ApiKeyPatch
 from tastypie.authentication import (BasicAuthentication, MultiAuthentication,
                                      SessionAuthentication)
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
@@ -22,6 +22,7 @@ from tastypie.utils import trailing_slash
 
 from cartoview.log_handler import get_logger
 
+from .auth import ApiKeyPatch
 from .authorization import GpkgAuthorization
 from .constants import _downloads_dir
 from .decorators import FORMAT_EXT, time_it
@@ -31,6 +32,7 @@ from .helpers import read_in_chunks
 from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
+from .tasks import esri_from_url
 from .utils import SLUGIFIER
 
 logger = get_logger(__name__)
@@ -204,7 +206,48 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('download_request'),
                 name="api_download_request"),
+            url(r"^(?P<resource_name>%s)/tasks/state%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('task_state'),
+                name="api_task_state"),
+            url(r"^(?P<resource_name>%s)/esri/dump/layer%s$" %
+                (self._meta.resource_name, trailing_slash()),
+                self.wrap_view('esri_dump'),
+                name="api_esri_dump"),
         ]
+
+    def esri_dump(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        data = self.deserialize(request, request.body)
+        if 'layer_url' in data:
+            layer_url = data.get("layer_url")
+            task = esri_from_url.delay(layer_url, useremail=request.user.email)
+            response_date = {"task_id": task.id}
+            return self.create_response(request, response_date,
+                                        http.HttpAccepted)
+        else:
+            return self.get_err_response(request, {"layer_url not provided"},
+                                         http.HttpBadRequest)
+
+    def task_state(self, request, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+        if 'task_id' in request.GET:
+            task_id = request.GET['task_id']
+            task = AsyncResult(task_id)
+            result = task.result
+            state = task.state
+            response_date = {"state": state, "result": result}
+            return self.create_response(request, response_date,
+                                        http.HttpAccepted)
+        else:
+            return self.get_err_response(
+                request,
+                {"No Task Id provided, please send task_id as query string"},
+                http.HttpBadRequest)
 
     def get_permissions(self, request, **kwargs):
         self.method_check(request, allowed=['get'])
