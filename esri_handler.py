@@ -128,12 +128,13 @@ class EsriHandler(EsriDumper):
                 layer = None
             return gpkg_layer
 
-    def publish_to_geonode(self,
-                           overwrite=False,
-                           temporary=False,
-                           launder=False,
-                           name=None):
+    def publish(self,
+                overwrite=False,
+                temporary=False,
+                launder=False,
+                name=None):
         try:
+            geonode_layer = None
             user = Profile.objects.filter(is_superuser=True).first()
             layer = self.esri_to_postgis(overwrite, temporary, launder, name)
             if not layer:
@@ -177,7 +178,9 @@ class EsriHandler(EsriDumper):
                         if not uploaded:
                             logger.error("Failed To Upload SLD Icon {}".format(
                                 icon_path))
-                    gs_pub.remove_cached(geonode_layer.alternate)
+                gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
             logger.error(e.message)
+        finally:
+            return geonode_layer
