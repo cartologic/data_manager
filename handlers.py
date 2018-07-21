@@ -3,8 +3,10 @@ try:
     import ogr
 except:
     from osgeo import ogr
+import os
 import pipes
 import subprocess
+import time
 
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
@@ -13,9 +15,11 @@ from geonode.layers.models import Layer
 
 from cartoview.log_handler import get_logger
 
-from .constants import POSTGIS_OPTIONS
+from .constants import POSTGIS_OPTIONS, _downloads_dir
 from .exceptions import GpkgLayerException
 from .layer_manager import GpkgLayer, SourceException
+from .style_manager import StyleManager
+from .utils import get_new_dir, get_sld_body
 
 logger = get_logger(__name__)
 
@@ -195,6 +199,51 @@ class GpkgManager(object):
                   if layer and layer.name in layernames]
         for lyr in layers:
             ds.CopyLayer(lyr.gpkg_layer, lyr.name)
+
+    @staticmethod
+    def backup_portal(dest_path=None):
+        final_path = None
+        if not dest_path:
+            dest_path = get_new_dir(base_dir=_downloads_dir)
+        file_suff = time.strftime("%Y_%m_%d-%H_%M_%S")
+        package_dir = os.path.join(dest_path, "backup_%s.gpkg" % (file_suff))
+        connection_string = get_connection()
+        try:
+            if not os.path.isdir(dest_path) or not os.access(
+                    dest_path, os.W_OK):
+                raise Exception(
+                    'maybe destination is not writable or not a directory')
+            ds = GpkgManager.open_source(connection_string, is_postgres=True)
+            if ds:
+                all_layers = Layer.objects.all()
+                layer_styles = []
+                table_names = []
+                for layer in all_layers:
+                    typename = str(layer.alternate)
+                    table_name = typename.split(":").pop()
+                    if GpkgManager.source_layer_exists(ds, table_name):
+                        table_names.append(table_name)
+                        gattr = str(
+                            layer.attribute_set.filter(
+                                attribute_type__contains='gml').first()
+                            .attribute)
+                        layer_style = layer.default_style
+                        sld_url = layer_style.sld_url
+                        style_name = str(layer_style.name)
+                        layer_styles.append((table_name, gattr, style_name,
+                                             get_sld_body(sld_url)))
+                GpkgManager.postgis_as_gpkg(
+                    connection_string, package_dir, layernames=table_names)
+                stm = StyleManager(package_dir)
+                stm.create_table()
+                for style in layer_styles:
+                    stm.add_style(*style, default=True)
+            final_path = dest_path
+
+        except Exception as e:
+            logger.error(e.message)
+        finally:
+            return final_path
 
 
 def get_connection():

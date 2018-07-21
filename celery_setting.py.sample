@@ -1,0 +1,56 @@
+ASYNC_SIGNALS = True
+RABBITMQ_SIGNALS_BROKER_URL = 'amqp://localhost:5672'
+REDIS_SIGNALS_BROKER_URL = 'redis://localhost:6379/0'
+LOCAL_SIGNALS_BROKER_URL = 'memory://'
+
+if ASYNC_SIGNALS:
+    _BROKER_URL = os.environ.get('BROKER_URL', RABBITMQ_SIGNALS_BROKER_URL)
+    # _BROKER_URL =  = os.environ.get('BROKER_URL', REDIS_SIGNALS_BROKER_URL)
+
+    CELERY_RESULT_BACKEND = _BROKER_URL
+else:
+    _BROKER_URL = LOCAL_SIGNALS_BROKER_URL
+
+BROKER_URL = _BROKER_URL
+
+CELERY_RESULT_PERSISTENT = False
+
+# Allow to recover from any unknown crash.
+CELERY_ACKS_LATE = True
+
+# Set this to False in order to run async
+CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS else True
+CELERY_TASK_IGNORE_RESULT = True
+
+# I use these to debug kombu crashes; we get a more informative message.
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Set Tasks Queues
+# CELERY_TASK_DEFAULT_QUEUE = "default"
+# CELERY_TASK_DEFAULT_EXCHANGE = "default"
+# CELERY_TASK_DEFAULT_EXCHANGE_TYPE = "direct"
+# CELERY_TASK_DEFAULT_ROUTING_KEY = "default"
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_TASK_RESULT_EXPIRES = 43200
+
+# Sometimes, Ask asks us to enable this to debug issues.
+# BTW, it will save some CPU cycles.
+CELERY_DISABLE_RATE_LIMITS = False
+CELERY_SEND_TASK_EVENTS = True
+CELERY_WORKER_DISABLE_RATE_LIMITS = False
+CELERY_WORKER_SEND_TASK_EVENTS = True
+
+# Allow our remote workers to get tasks faster if they have a
+# slow internet connection (yes Gurney, I'm thinking of you).
+CELERY_MESSAGE_COMPRESSION = 'gzip'
+
+# The default beiing 5000, we need more than this.
+CELERY_MAX_CACHED_RESULTS = 32768
+
+# NOTE: I don't know if this is compatible with upstart.
+CELERYD_POOL_RESTARTS = True
+
+CELERY_TRACK_STARTED = True
+CELERY_SEND_TASK_SENT_EVENT = True
