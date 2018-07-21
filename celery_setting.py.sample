@@ -20,18 +20,12 @@ CELERY_ACKS_LATE = True
 
 # Set this to False in order to run async
 CELERY_TASK_ALWAYS_EAGER = False if ASYNC_SIGNALS else True
-CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_IGNORE_RESULT = False
 
 # I use these to debug kombu crashes; we get a more informative message.
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
-
-# Set Tasks Queues
-# CELERY_TASK_DEFAULT_QUEUE = "default"
-# CELERY_TASK_DEFAULT_EXCHANGE = "default"
-# CELERY_TASK_DEFAULT_EXCHANGE_TYPE = "direct"
-# CELERY_TASK_DEFAULT_ROUTING_KEY = "default"
 CELERY_TASK_CREATE_MISSING_QUEUES = True
 CELERY_TASK_RESULT_EXPIRES = 43200
 
@@ -41,6 +35,42 @@ CELERY_DISABLE_RATE_LIMITS = False
 CELERY_SEND_TASK_EVENTS = True
 CELERY_WORKER_DISABLE_RATE_LIMITS = False
 CELERY_WORKER_SEND_TASK_EVENTS = True
+GEONODE_EXCHANGE = Exchange("default", type="direct", durable=True)
+GEOSERVER_EXCHANGE = Exchange("geonode", type="topic", durable=False)
+CELERY_TASK_QUEUES = (
+    Queue('default', GEONODE_EXCHANGE, routing_key='default'),
+    Queue('geonode', GEONODE_EXCHANGE, routing_key='geonode'),
+    Queue('update', GEONODE_EXCHANGE, routing_key='update'),
+    Queue('cleanup', GEONODE_EXCHANGE, routing_key='cleanup'),
+    Queue('email', GEONODE_EXCHANGE, routing_key='email'),
+)
+
+
+CELERY_TASK_QUEUES += (
+    Queue("broadcast", GEOSERVER_EXCHANGE, routing_key="#"),
+    Queue("email.events", GEOSERVER_EXCHANGE, routing_key="email"),
+    Queue("all.geoserver", GEOSERVER_EXCHANGE, routing_key="geoserver.#"),
+    Queue(
+        "geoserver.catalog",
+        GEOSERVER_EXCHANGE,
+        routing_key="geoserver.catalog"),
+    Queue(
+        "geoserver.data",
+        GEOSERVER_EXCHANGE,
+        routing_key="geoserver.catalog"),
+    Queue(
+        "geoserver.events",
+        GEOSERVER_EXCHANGE,
+        routing_key="geonode.geoserver"),
+    Queue(
+        "notifications.events",
+        GEOSERVER_EXCHANGE,
+        routing_key="notifications"),
+    Queue(
+        "geonode.layer.viewer",
+        GEOSERVER_EXCHANGE,
+        routing_key="geonode.viewer"),
+)
 
 # Allow our remote workers to get tasks faster if they have a
 # slow internet connection (yes Gurney, I'm thinking of you).
