@@ -28,6 +28,7 @@
       layersURL:"{% url 'api_dispatch_list'  api_name='api' resource_name='layers' %}",
       downloadURL:"{% url 'api_download_request'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
       permissionsURL:"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
       publishURL:function(upload_id,layername){
         return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/publish/"
       },

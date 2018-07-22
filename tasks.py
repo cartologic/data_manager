@@ -31,12 +31,13 @@ def esri_from_url(url,
     layer_url = None
     message = None
     if geonode_layer:
+        site_url = settings.SITEURL
         layer_url = reverse(
             'layer_detail', kwargs={"layername": geonode_layer.alternate})
-        message = "Your Layer Successfully Imported {}".format(
-            urljoin(settings.SITEURL, layer_url))
+        url = urljoin(site_url, layer_url)
+        message = "Your Layer Successfully Imported {}".format(url)
     else:
-        message = "Failed To Dump Your Layer"
+        message = "Failed To Dump Your Layer please Contact Portal Admin"
     if useremail:
         msg = EmailMessage(
             'Esri Layer Status',

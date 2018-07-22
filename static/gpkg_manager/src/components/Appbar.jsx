@@ -1,6 +1,7 @@
 import 'typeface-roboto'
 
 import AppBar from '@material-ui/core/AppBar'
+import ArcGISLayerModal from './ArcGISLayerModal'
 import Button from '@material-ui/core/Button'
 import DownloadModal from './DownloadModal'
 import PropTypes from 'prop-types'
@@ -20,14 +21,19 @@ const styles = {
 
 class GeopackageAppBar extends React.Component {
     state = {
-        downloadModalOpen: false
+        downloadModalOpen: false,
+        ArcGISModalOpen: false,
+    }
+    handleArcGISModal = () => {
+        const { ArcGISModalOpen } = this.state
+        this.setState({ ArcGISModalOpen: !ArcGISModalOpen })
     }
     handleDownloadModal = () => {
         const { downloadModalOpen } = this.state
         this.setState({ downloadModalOpen: !downloadModalOpen })
     }
     render() {
-        const { downloadModalOpen } = this.state
+        const { downloadModalOpen, ArcGISModalOpen } = this.state
         const { classes, title } = this.props
         return (
             <div className={classes.root}>
@@ -36,9 +42,11 @@ class GeopackageAppBar extends React.Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {title}
                         </Typography>
+                        <Button onClick={this.handleArcGISModal} color="inherit">{"AcrGIS Publish"}</Button>
                         <Button onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
                     </Toolbar>
                 </AppBar>
+                <ArcGISLayerModal handleArcGISModal={this.handleArcGISModal} ArcGISModalOpen={ArcGISModalOpen} />
                 <DownloadModal handleDownloadModal={this.handleDownloadModal} downloadModalOpen={downloadModalOpen} />
             </div>
         )
