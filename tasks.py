@@ -34,7 +34,7 @@ def esri_from_url(self,
         site_url = settings.SITEURL
         layer_url = reverse(
             'layer_detail', kwargs={"layername": geonode_layer.alternate})
-        url = urljoin(site_url, layer_url)
+        url = urljoin(site_url, layer_url.lstrip('/'))
         message = "Your Layer Successfully Imported {}".format(url)
     else:
         message = "Failed To Dump Your Layer please Contact Portal Admin"
