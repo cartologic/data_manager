@@ -1,5 +1,5 @@
 # from celery import shared_task
-from celery import shared_task
+from geonode.celery_app import app
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse
@@ -9,18 +9,18 @@ from cartoview.log_handler import get_logger
 from .esri_handler import EsriHandler
 from .handlers import GpkgManager
 from .helpers import urljoin
-
 logger = get_logger(__name__)
 
 
-@shared_task
-def backup_portal_layer():
+@app.task(bind=True)
+def backup_portal_layer(self):
     path = GpkgManager.backup_portal()
     return path
 
 
-@shared_task
-def esri_from_url(url,
+@app.task(bind=True)
+def esri_from_url(self,
+                  url,
                   useremail=None,
                   overwrite=False,
                   temporary=False,
