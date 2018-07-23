@@ -10,13 +10,14 @@ from uuid import uuid4
 
 from esridump.dumper import EsriDumper
 from geonode.people.models import Profile
+from requests.exceptions import ConnectionError
 
 from ags2sld.handlers import Layer as AgsLayer
 from cartoview.log_handler import get_logger
 
-from .exceptions import EsriException
+from .exceptions import EsriException, EsriFeatureLayerException
 from .handlers import GpkgManager, get_connection
-from .helpers import urljoin
+from .helpers import count_iter, urljoin
 from .layer_manager import GpkgLayer
 from .publishers import ICON_REL_PATH, GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
@@ -43,6 +44,8 @@ class EsriHandler(EsriDumper):
     def create_feature(self, layer, featureDict, expected_type, srs=None):
         try:
             geom_dict = featureDict["geometry"]
+            if not geom_dict:
+                raise EsriFeatureLayerException("No Geometry Information")
             geom_type = geom_dict["type"]
             feature = ogr.Feature(layer.GetLayerDefn())
             coords = self.get_geom_coords(geom_dict)
@@ -50,7 +53,10 @@ class EsriHandler(EsriDumper):
             geom = ogr.CreateGeometryFromJson(f_json)
             if geom and srs:
                 geom.Transform(srs)
-            if geom and expected_type == geom.GetGeometryType():
+            if geom and expected_type != geom.GetGeometryType():
+                geom = ogr.ForceTo(geom, expected_type)
+            if geom and expected_type == geom.GetGeometryType(
+            ) and geom.IsValid():
                 feature.SetGeometry(geom)
                 for prop, val in featureDict["properties"].items():
                     name = str(SLUGIFIER(prop)).encode('utf-8')
@@ -86,12 +92,13 @@ class EsriHandler(EsriDumper):
         source = None
         layer = None
         gpkg_layer = None
-        es = self.get_esri_serializer()
-        if not name:
-            name = self.get_new_name(es.get_name())
-        feature_iter = iter(self)
         try:
+            es = self.get_esri_serializer()
+            if not name:
+                name = self.get_new_name(es.get_name())
+            feature_iter = iter(self)
             first_feature = feature_iter.next()
+            print first_feature
             source = GpkgManager.open_source(
                 get_connection(), is_postgres=True)
             source.FlushCache()
@@ -118,10 +125,14 @@ class EsriHandler(EsriDumper):
                 next_feature = feature_iter.next()
                 self.create_feature(
                     layer, next_feature, gtype, srs=coord_trans)
-        except (StopIteration, EsriException), e:
-            logger.error(e.message)
+        except (StopIteration, EsriException, EsriFeatureLayerException,
+                ConnectionError), e:
+            print e.message
+            if isinstance(e, EsriFeatureLayerException):
+                logger.info(e.message)
             if isinstance(e, EsriException):
                 layer = None
+            logger.error(e.message)
         finally:
             if source and layer:
                 layer.CommitTransaction()
@@ -141,7 +152,7 @@ class EsriHandler(EsriDumper):
             user = Profile.objects.filter(is_superuser=True).first()
             layer = self.esri_to_postgis(overwrite, temporary, launder, name)
             if not layer:
-                raise Exception("failed to copy to postgis")
+                raise Exception("failed to dump layer")
             gs_layername = layer.get_new_name()
             gs_pub = GeoserverPublisher()
 
