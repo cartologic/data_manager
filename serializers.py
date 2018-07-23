@@ -89,7 +89,11 @@ class EsriSerializer(object):
         return field_defns
 
     def get_geometry_type(self):
-        return self.geometry_types_mapping[self._data["geometryType"]]
+        geom_type = self.geometry_types_mapping.get(
+            self._data.get("geometryType", None), None)
+        if not geom_type:
+            raise EsriFeatureLayerException("No Geometry Type")
+        return geom_type
 
     @property
     def is_feature_layer(self):
