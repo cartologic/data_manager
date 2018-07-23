@@ -189,7 +189,6 @@ class EsriHandler(EsriDumper):
                 gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
-            print e.message
             logger.error(e.message)
         finally:
             return geonode_layer

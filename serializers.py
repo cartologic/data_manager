@@ -77,7 +77,10 @@ class EsriSerializer(object):
                 self.field_types_mapping[field_type])
             if field_type == "esriFieldTypeString" and field.get(
                     "length", None):
-                field_defn.SetWidth(field["length"])
+                # NOTE: handle large text by WideString
+                # For Now set max length by default
+                # field_defn.SetWidth(field["length"])
+                field_defn.SetWidth(10485760)
             if field_type in "esriFieldTypeInteger":
                 field_defn.SetPrecision(64)
             if field_type != "esriFieldTypeDouble":
