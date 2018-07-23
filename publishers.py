@@ -22,6 +22,7 @@ from .helpers import urljoin
 logger = get_logger(__name__)
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
+ICON_REL_PATH = "workspaces/{}/styles".format(DEFAULT_WORKSPACE)
 
 
 class GeoserverPublisher(object):
@@ -74,11 +75,10 @@ class GeoserverPublisher(object):
         except Exception as e:
             logger.error(e.message)
 
-    def upload_file(
-            self, file,
-            rel_path="/workspaces/{}/styles".format(DEFAULT_WORKSPACE)):
+    def upload_file(self, file, rel_path=ICON_REL_PATH):
         url = urljoin(self.base_url, "rest/", "resource", rel_path,
                       os.path.basename(file.name))
+        print url
         req = requests.put(
             url,
             data=file.read(),

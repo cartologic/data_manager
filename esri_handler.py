@@ -5,19 +5,22 @@ try:
 except:
     from osgeo import ogr, osr
 import json
+import os
 from uuid import uuid4
 
 from esridump.dumper import EsriDumper
 from geonode.people.models import Profile
-from .style_manager import StyleManager
+
 from ags2sld.handlers import Layer as AgsLayer
 from cartoview.log_handler import get_logger
-import os
+
 from .exceptions import EsriException
 from .handlers import GpkgManager, get_connection
+from .helpers import urljoin
 from .layer_manager import GpkgLayer
-from .publishers import GeonodePublisher, GeoserverPublisher
+from .publishers import ICON_REL_PATH, GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
+from .style_manager import StyleManager
 from .utils import SLUGIFIER, get_new_dir
 
 logger = get_logger(__name__)
@@ -155,12 +158,23 @@ class EsriHandler(EsriDumper):
                 sld_path = None
                 icon_paths = []
                 for file in os.listdir(tmp_dir):
-                    if file.endswith(".png"):
-                        icon_paths.append(os.path.join(tmp_dir, file))
-                    if file.endswith(".svg"):
-                        icon_paths.append(os.path.join(tmp_dir, file))
                     if file.endswith(".sld"):
                         sld_path = os.path.join(tmp_dir, file)
+                for file in os.listdir(os.path.join(tmp_dir, ags_layer.name)):
+                    if file.endswith(".png"):
+                        icon_paths.append(
+                            os.path.join(tmp_dir, ags_layer.name, file))
+                    if file.endswith(".svg"):
+                        icon_paths.append(
+                            os.path.join(tmp_dir, ags_layer.name, file))
+                if len(icon_paths) > 0:
+                    for icon_path in icon_paths:
+                        uploaded = gs_pub.upload_file(
+                            open(icon_path),
+                            rel_path=urljoin(ICON_REL_PATH, ags_layer.name))
+                        if not uploaded:
+                            logger.error("Failed To Upload SLD Icon {}".format(
+                                icon_path))
                 if sld_path:
                     sld_body = None
                     with open(sld_path, 'r') as sld_file:
@@ -172,15 +186,10 @@ class EsriHandler(EsriDumper):
                                                 style.name)
                     geonode_layer.default_style = style
                     geonode_layer.save()
-                if len(icon_paths) > 0:
-                    for icon_path in icon_paths:
-                        uploaded = gs_pub.upload_file(open(icon_path))
-                        if not uploaded:
-                            logger.error("Failed To Upload SLD Icon {}".format(
-                                icon_path))
                 gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
+            print e.message
             logger.error(e.message)
         finally:
             return geonode_layer
