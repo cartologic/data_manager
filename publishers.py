@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
+import os
 import sys
+import time
 import uuid
 from decimal import Decimal
-import os
+from io import BytesIO
+
+import lxml
 import requests
 from django.conf import settings
 from django.utils.translation import ugettext as _
@@ -18,6 +22,7 @@ from requests.auth import HTTPBasicAuth
 from cartoview.log_handler import get_logger
 
 from .helpers import urljoin
+from .utils import SLUGIFIER
 
 logger = get_logger(__name__)
 
@@ -78,7 +83,6 @@ class GeoserverPublisher(object):
     def upload_file(self, file, rel_path=ICON_REL_PATH):
         url = urljoin(self.base_url, "rest/", "resource", rel_path,
                       os.path.basename(file.name))
-        print url
         req = requests.put(
             url,
             data=file.read(),
@@ -87,6 +91,56 @@ class GeoserverPublisher(object):
         if req.status_code == 201:
             return True
         return False
+
+    def get_new_style_name(self, sld_name):
+        sld_name = SLUGIFIER(sld_name)
+        style = gs_catalog.get_style(
+            sld_name, workspace=settings.DEFAULT_WORKSPACE)
+        if not style:
+            return sld_name
+        else:
+            timestr = time.strftime("%Y%m%d_%H%M%S")
+            return "{}_{}".format(sld_name, timestr)
+
+    def convert_sld_attributes(self, sld_body):
+        contents = BytesIO(str(sld_body))
+        tree = lxml.etree.parse(contents)
+        root = tree.getroot()
+        nsmap = {k: v for k, v in root.nsmap.iteritems() if k}
+        properties = tree.xpath('.//ogc:PropertyName', namespaces=nsmap)
+        for prop in properties:
+            value = SLUGIFIER(str(prop.text)).encode('utf-8')
+            prop.text = value
+        properties = tree.xpath('.//sld:PropertyName', namespaces=nsmap)
+        for prop in properties:
+            value = SLUGIFIER(str(prop.text)).encode('utf-8')
+            prop.text = value
+        return lxml.etree.tostring(tree)
+
+    def create_style(self, name, sld_body, overwrite=True, raw=True):
+        name = self.get_new_style_name(name)
+        sld_body = self.convert_sld_attributes(sld_body)
+        gs_catalog.create_style(
+            name,
+            sld_body,
+            overwrite=overwrite,
+            raw=True,
+            workspace=settings.DEFAULT_WORKSPACE)
+        style = gs_catalog.get_style(
+            name, workspace=settings.DEFAULT_WORKSPACE)
+        return style
+
+    def set_default_style(self, layername, style):
+        saved = False
+        try:
+            layer = gs_catalog.get_layer(layername)
+            layer.default_style = style
+            gs_catalog.save(layer)
+            saved = True
+        except Exception as e:
+            print e.message
+            logger.error(e.message)
+        return saved
 
     def remove_cached(self, typename):
         import geonode.geoserver.helpers as helpers
