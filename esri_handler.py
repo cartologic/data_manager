@@ -171,13 +171,15 @@ class EsriHandler(EsriDumper):
                 for file in os.listdir(tmp_dir):
                     if file.endswith(".sld"):
                         sld_path = os.path.join(tmp_dir, file)
-                for file in os.listdir(os.path.join(tmp_dir, ags_layer.name)):
-                    if file.endswith(".png"):
-                        icon_paths.append(
-                            os.path.join(tmp_dir, ags_layer.name, file))
-                    if file.endswith(".svg"):
-                        icon_paths.append(
-                            os.path.join(tmp_dir, ags_layer.name, file))
+                icons_dir = os.path.join(tmp_dir, ags_layer.name)
+                if os.path.exists(icons_dir):
+                    for file in os.listdir(icons_dir):
+                        if file.endswith(".png"):
+                            icon_paths.append(
+                                os.path.join(tmp_dir, ags_layer.name, file))
+                        if file.endswith(".svg"):
+                            icon_paths.append(
+                                os.path.join(tmp_dir, ags_layer.name, file))
                 if len(icon_paths) > 0:
                     for icon_path in icon_paths:
                         uploaded = gs_pub.upload_file(
