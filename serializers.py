@@ -60,12 +60,22 @@ class EsriSerializer(object):
     def get_fields_list(self):
         data_fields = self._data['fields']
         assert data_fields
-        data_fields = [
-            field for field in data_fields
-            if field["type"] in self.field_types_mapping.keys()
-            and field["name"] not in self.ignored_fields
-        ]
-        return data_fields
+        layer_fields = []
+
+        def search_by_name(name):
+            check = False
+            for field in layer_fields:
+                if field["name"] == name:
+                    check = True
+                    break
+            return check
+
+        for field in data_fields:
+            if field["type"] in self.field_types_mapping.keys(
+            ) and field["name"] not in self.ignored_fields and not search_by_name(
+                    field["name"]):
+                layer_fields.append(field)
+        return layer_fields
 
     def build_fields(self):
         data_fields = self.get_fields_list()
