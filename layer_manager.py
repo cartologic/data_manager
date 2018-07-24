@@ -131,7 +131,7 @@ class GpkgLayer(object):
 
     @staticmethod
     def _get_new_dir(base_dir=_temp_dir):
-        get_new_dir(base_dir=base_dir)
+        return get_new_dir(base_dir=base_dir)
 
     @staticmethod
     def _zip(src, dst):
