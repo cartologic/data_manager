@@ -17,11 +17,10 @@ from cartoview.log_handler import get_logger
 
 from .exceptions import EsriException, EsriFeatureLayerException
 from .handlers import GpkgManager, get_connection
-from .helpers import count_iter, urljoin
+from .helpers import urljoin
 from .layer_manager import GpkgLayer
 from .publishers import ICON_REL_PATH, GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
-from .style_manager import StyleManager
 from .utils import SLUGIFIER, get_new_dir
 
 logger = get_logger(__name__)
@@ -98,7 +97,6 @@ class EsriHandler(EsriDumper):
                 name = self.get_new_name(es.get_name())
             feature_iter = iter(self)
             first_feature = feature_iter.next()
-            print first_feature
             source = GpkgManager.open_source(
                 get_connection(), is_postgres=True)
             source.FlushCache()
@@ -127,7 +125,7 @@ class EsriHandler(EsriDumper):
                     layer, next_feature, gtype, srs=coord_trans)
         except (StopIteration, EsriException, EsriFeatureLayerException,
                 ConnectionError), e:
-            print e.message
+            logger.debug(e.message)
             if isinstance(e, EsriFeatureLayerException):
                 logger.info(e.message)
             if isinstance(e, EsriException):
@@ -155,17 +153,18 @@ class EsriHandler(EsriDumper):
                 raise Exception("failed to dump layer")
             gs_layername = layer.get_new_name()
             gs_pub = GeoserverPublisher()
-
             geonode_pub = GeonodePublisher(owner=user)
-            gs_pub.publish_postgis_layer(gs_layername, layername=gs_layername)
-            geonode_layer = geonode_pub.publish(gs_layername)
-            if geonode_layer:
-                logger.info(geonode_layer.alternate)
+            published = gs_pub.publish_postgis_layer(
+                gs_layername, layername=gs_layername)
+            if published:
                 agsURL, agsId = self._layer_url.rsplit('/', 1)
                 tmp_dir = get_new_dir()
                 ags_layer = AgsLayer(
                     agsURL + "/", int(agsId), dump_folder=tmp_dir)
-                ags_layer.dump_sld_file()
+                try:
+                    ags_layer.dump_sld_file()
+                except:
+                    pass
                 sld_path = None
                 icon_paths = []
                 for file in os.listdir(tmp_dir):
@@ -192,13 +191,14 @@ class EsriHandler(EsriDumper):
                     sld_body = None
                     with open(sld_path, 'r') as sld_file:
                         sld_body = sld_file.read()
-                    stm = StyleManager(sld_path)
-                    style = stm.upload_style(
+                    style = gs_pub.create_style(
                         gs_layername, sld_body, overwrite=True)
-                    stm.set_default_layer_style(geonode_layer.alternate,
-                                                style.name)
-                    geonode_layer.default_style = style
-                    geonode_layer.save()
+                    if style:
+                        gs_pub.set_default_style(gs_layername, style)
+
+            geonode_layer = geonode_pub.publish(gs_layername)
+            if geonode_layer:
+                logger.info(geonode_layer.alternate)
                 gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
