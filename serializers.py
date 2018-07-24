@@ -65,7 +65,8 @@ class EsriSerializer(object):
         def search_by_name(name):
             check = False
             for field in layer_fields:
-                if field["name"] == name:
+                if SLUGIFIER(field["name"]).encode('utf-8') == SLUGIFIER(
+                        name).encode('utf-8'):
                     check = True
                     break
             return check
@@ -82,20 +83,21 @@ class EsriSerializer(object):
         field_defns = []
         for field in data_fields:
             field_type = field["type"]
-            field_defn = ogr.FieldDefn(
-                str(SLUGIFIER(field["name"])),
-                self.field_types_mapping[field_type])
-            if field_type == "esriFieldTypeString" and field.get(
-                    "length", None):
-                # NOTE: handle large text by WideString
-                # For Now set max length by default
-                # field_defn.SetWidth(field["length"])
-                field_defn.SetWidth(10485760)
-            if field_type in "esriFieldTypeInteger":
-                field_defn.SetPrecision(64)
-            if field_type != "esriFieldTypeDouble":
-                field_defn.SetNullable(1)
-            field_defns.append(field_defn)
+            if str(SLUGIFIER(field["name"])).encode('utf-8'):
+                field_defn = ogr.FieldDefn(
+                    str(SLUGIFIER(field["name"])),
+                    self.field_types_mapping[field_type])
+                if field_type == "esriFieldTypeString" and field.get(
+                        "length", None):
+                    # NOTE: handle large text by WideString
+                    # For Now set max length by default
+                    # field_defn.SetWidth(field["length"])
+                    field_defn.SetWidth(10485760)
+                if field_type in "esriFieldTypeInteger":
+                    field_defn.SetPrecision(64)
+                if field_type != "esriFieldTypeDouble":
+                    field_defn.SetNullable(1)
+                field_defns.append(field_defn)
         return field_defns
 
     def get_geometry_type(self):
