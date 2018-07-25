@@ -49,47 +49,47 @@ var config = {
     },
     module: {
         rules: [ {
-            test: /\.(js|jsx)$/,
-            exclude: /(node_modules|bower_components)/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    cacheDirectory: true,
-                    presets: [ "es2015",
+                test: /\.(js|jsx)$/,
+                exclude: /(node_modules|bower_components)/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        cacheDirectory: true,
+                        presets: [ "es2015",
                         "stage-1",
                         "react" ],
-                    plugins: [ "transform-object-rest-spread",
+                        plugins: [ "transform-object-rest-spread",
                         'transform-runtime' ]
-                }
-            }
-        }, {
-            test: /\.css$/,
-            loader: ExtractTextPlugin.extract( {
-                use: {
-                    loader: 'css-loader',
-                    options: {
-                        minimize: true
                     }
-                },
-                fallback: 'style-loader'
-            } )
+                }
+        }, {
+                test: /\.css$/,
+                loader: ExtractTextPlugin.extract( {
+                    use: {
+                        loader: 'css-loader',
+                        options: {
+                            minimize: true
+                        }
+                    },
+                    fallback: 'style-loader'
+                } )
         },
-        {
-            test: /\.xml$/,
-            loader: 'raw-loader'
+            {
+                test: /\.xml$/,
+                loader: 'raw-loader'
         },
-        {
-            type: 'javascript/auto',
-            test: /\.json$/,
-            loader: "json-loader"
+            {
+                type: 'javascript/auto',
+                test: /\.json$/,
+                loader: "json-loader"
         },
-        {
-            test: /\.(png|jpg|gif)$/,
-            loader: 'file-loader'
+            {
+                test: /\.(png|jpg|gif)$/,
+                loader: 'file-loader'
         },
-        {
-            test: /\.(woff|woff2)$/,
-            loader: 'url-loader?limit=100000'
+            {
+                test: /\.(woff|woff2)$/,
+                loader: 'url-loader?limit=100000'
         }
         ],
         noParse: [ /dist\/ol\.js/, /dist\/jspdf.debug\.js/,

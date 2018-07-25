@@ -16,6 +16,9 @@ const styles = {
     },
     flex: {
         flexGrow: 1,
+    },
+    capitalize: {
+        textTransform: 'capitalize'
     }
 }
 
@@ -42,8 +45,8 @@ class GeopackageAppBar extends React.Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {title}
                         </Typography>
-                        <Button onClick={this.handleArcGISModal} color="inherit">{"AcrGIS Publish"}</Button>
-                        <Button onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
+                        <Button classes={{label:classes.capitalize}} onClick={this.handleArcGISModal} color="inherit">{"ArcGIS Publisher"}</Button>
+                        <Button classes={{label:classes.capitalize}} onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
                     </Toolbar>
                 </AppBar>
                 <ArcGISLayerModal handleArcGISModal={this.handleArcGISModal} ArcGISModalOpen={ArcGISModalOpen} />
