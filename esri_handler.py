@@ -87,7 +87,8 @@ class EsriHandler(EsriDumper):
                         overwrite=False,
                         temporary=False,
                         launder=False,
-                        name=None):
+                        name=None,
+                        geom_name='geom'):
         source = None
         layer = None
         gpkg_layer = None
@@ -104,6 +105,7 @@ class EsriHandler(EsriDumper):
                 'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
                 'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
                 'LAUNDER={}'.format("YES" if launder else "NO"),
+                'GEOMETRY_NAME={}'.format(geom_name if geom_name else 'geom')
             ]
             gtype = es.get_geometry_type()
             coord_trans = None
