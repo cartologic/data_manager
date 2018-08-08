@@ -105,7 +105,7 @@ class GeopackageManager extends Component {
         return (
             <MuiThemeProvider theme={theme}>
                 <div className={classes.fullHeight}>
-                    <AppBar title="GeoPackage Manager" />
+                    <AppBar title="GIS Data Import Manager" />
                     <Paper className={classnames([classes.root])}>
                         <Paper elevation={2}>
                             <Dropzone className={classes.dropZone} accept={".gpkg"} onDrop={this.onDrop}>

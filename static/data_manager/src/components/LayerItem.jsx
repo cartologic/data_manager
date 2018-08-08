@@ -131,12 +131,12 @@ class LayerItem extends React.Component {
                             {"Compare Schema"}
                         </Button>
                     </Tooltip>
-                    <Tooltip title="Completly Replace Layer i.e(replace Layer Portal Record, Styles, Database Table, Geoserver Layer and thumbnails)">
+                    <Tooltip title="Delete Recent Data, Style and Metadata and It With the New One">
                         <Button onClick={this.startReplaceLayer} variant="outlined" color="secondary" className={classes.button}>
                             {"Replace"}
                         </Button>
                     </Tooltip>
-                    <Tooltip title="Replace Current Database Table With This One">
+                    <Tooltip title="Replace The Current Data Only but Keep the style and metadata">
                         <Button onClick={this.startReloadLayer} variant="outlined" color="default" className={classes.button}>
                             {"Update(DB Table Replacement)"}
                         </Button>
@@ -145,7 +145,7 @@ class LayerItem extends React.Component {
                 <Collapse in={expand} timeout="auto" unmountOnExit>
                     <div className={classes.content}>
                         <div className={classes.textCenter}>
-                            {!schemaLoading && schema && < Typography color={schema.compatible ? "primary" : "secondary"} noWrap className={classNames(classes.flexGrow, classes.button)} variant="title">{`Layer is ${schema.compatible ? "Compatible" : "Incompatible"}`}</Typography>}
+                            {!schemaLoading && schema && < Typography color={schema.compatible ? "primary" : "secondary"} noWrap className={classNames(classes.flexGrow, classes.button)} variant="title">{`Layer Schema is ${schema.compatible ? "Compatible" : "Incompatible"}`}</Typography>}
                         </div>
                         <div className={classes.schemaFields}>
                             {!schemaLoading && schema && schema.new_fields.length > 0 && <List

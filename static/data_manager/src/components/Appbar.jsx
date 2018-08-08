@@ -7,6 +7,7 @@ import DownloadModal from './DownloadModal'
 import PropTypes from 'prop-types'
 import React from 'react'
 import Toolbar from '@material-ui/core/Toolbar'
+import Tooltip from '@material-ui/core/Tooltip'
 import Typography from '@material-ui/core/Typography'
 import { withStyles } from '@material-ui/core/styles'
 
@@ -45,8 +46,11 @@ class GeopackageAppBar extends React.Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {title}
                         </Typography>
-                        <Button classes={{label:classes.capitalize}} onClick={this.handleArcGISModal} color="inherit">{"ArcGIS Publisher"}</Button>
-                        <Button classes={{label:classes.capitalize}} onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
+                        <Tooltip title="Import GeoPackage, Shapefile, CSV, Raster or KML">
+                            <Button classes={{ label: classes.capitalize }} onClick={this.handleArcGISModal} color="inherit">{"Upload Shapefile"}</Button>
+                        </Tooltip>
+                        <Button classes={{ label: classes.capitalize }} onClick={this.handleArcGISModal} color="inherit">{"ArcGIS Publisher"}</Button>
+                        <Button classes={{ label: classes.capitalize }} onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
                     </Toolbar>
                 </AppBar>
                 <ArcGISLayerModal handleArcGISModal={this.handleArcGISModal} ArcGISModalOpen={ArcGISModalOpen} />

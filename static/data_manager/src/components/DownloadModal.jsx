@@ -92,7 +92,7 @@ class DownloadModal extends React.Component {
                 onClose={handleDownloadModal}
                 aria-labelledby="form-dialog-title"
             >
-                <DialogTitle disableTypography={true} className={classes.dialogTitle}> <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">{"Update/Replace Layer"}</Typography></DialogTitle>
+                <DialogTitle disableTypography={true} className={classes.dialogTitle}> <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">{"Download Layers"}</Typography></DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         {downloadError && <Typography className={classes.flexGrow} noWrap color="secondary" variant="subheading">{downloadError}</Typography>}

@@ -6,8 +6,8 @@
     <title>GeoPackage Manager</title>
     <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1, user-scalable=no" />  
     <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}cartoview/img/icon.png" />
-    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}">
-    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}?version=1.1.0">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}?version=1.1.0">
     <style>
         html,body {
             height: 100%;
@@ -20,23 +20,24 @@
 </head>
 <body>
 <div style="height: 100%;" id="react-app"></div>
-<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}"></script>
-  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}"></script>
+<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=1.1.0"></script>
+  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=1.1.0"></script>
   <script>
     const urls={
-      uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='data_manager' %}",
       layersURL:"{% url 'api_dispatch_list'  api_name='api' resource_name='layers' %}",
-      downloadURL:"{% url 'api_download_request'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
-      permissionsURL:"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
-      esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='geopackage_manager' %}",
+      downloadURL:"{% url 'api_download_request'  api_name='gpkg_api' resource_name='data_manager' %}",
+      permissionsURL:"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='data_manager' %}",
+      esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='data_manager' %}",
+      layerUpload:"{% url 'layer_upload' %}",
       publishURL:function(upload_id,layername){
-        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/publish/"
+        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/publish/"
       },
       compareLayerURL:function(upload_id,layername,glayername){
-        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
+        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
       },
       reloadURL:function(upload_id,layername,glayername){
-        return "/geopackage_manager/api/gpkg_api/geopackage_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
+        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
       }
     }
     var downloadableLayers={{download_layers|dump_json}}
