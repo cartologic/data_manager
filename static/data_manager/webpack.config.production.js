@@ -1,6 +1,7 @@
 var webpack = require( 'webpack' )
 var ExtractTextPlugin = require( "extract-text-webpack-plugin" )
 var path = require( 'path' )
+const BundleAnalyzerPlugin = require( 'webpack-bundle-analyzer' ).BundleAnalyzerPlugin
 var BUILD_DIR = path.resolve( __dirname, 'dist' )
 var APP_DIR = path.resolve( __dirname, 'src' )
 var filename = '[name].bundle.js'
@@ -9,14 +10,18 @@ const plugins = [
         allChunks: true,
         filename: "[name].css",
     } ),
+    new webpack.optimize.AggressiveMergingPlugin(),
+    new webpack.NoEmitOnErrorsPlugin(),
+    new webpack.HashedModuleIdsPlugin(),
     new webpack.SourceMapDevToolPlugin( {
         filename: 'sourcemaps/[file].map',
-        publicPath: '/static/gpkg_manager/dist/',
+        publicPath: '/static/data_manager/dist/',
         fileContext: 'public'
     } ),
+    new BundleAnalyzerPlugin()
 
 ]
-var config = {
+const config = {
     entry: {
         GeopackageManager: path.join( APP_DIR, 'containers',
             'GeopackageManager.jsx' ),
@@ -27,7 +32,8 @@ var config = {
             automaticNameDelimiter: '-'
         }
     },
-    devtool: 'eval-cheap-module-source-map',
+    devtool: 'source-map',
+    mode: 'production',
     output: {
         path: BUILD_DIR,
         filename: filename,
@@ -35,7 +41,7 @@ var config = {
         libraryTarget: 'umd',
         umdNamedDefine: true,
         chunkFilename: '[name]-chunk.js',
-        publicPath: "/static/gpkg_manager/dist/"
+        publicPath: "/static/data_manager/dist/"
     },
     node: {
         fs: "empty"

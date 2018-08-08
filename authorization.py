@@ -5,7 +5,7 @@ from guardian.shortcuts import get_objects_for_user
 class GpkgAuthorization(Authorization):
     def read_list(self, object_list, bundle):
         permitted_ids = get_objects_for_user(
-            bundle.request.user, 'gpkg_manager.view_package').values('id')
+            bundle.request.user, 'data_manager.view_package').values('id')
         return object_list.filter(id__in=permitted_ids)
 
     def read_detail(self, object_list, bundle):
@@ -34,7 +34,7 @@ class GpkgAuthorization(Authorization):
 
     def delete_list(self, object_list, bundle):
         permitted_ids = get_objects_for_user(
-            bundle.request.user, 'gpkg_manager.delete_package').values('id')
+            bundle.request.user, 'data_manager.delete_package').values('id')
         return object_list.filter(id__in=permitted_ids)
 
     def delete_detail(self, object_list, bundle):

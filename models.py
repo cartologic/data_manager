@@ -61,7 +61,7 @@ class GpkgUpload(models.Model):
         return os.path.basename(self.package.name)
 
     @property
-    def gpkg_manager(self):
+    def data_manager(self):
         return GpkgManager(self.package.path, is_postgis=False)
 
     @property

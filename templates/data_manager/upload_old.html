@@ -4,8 +4,8 @@
 {% block title %} {{ block.super }} - {% trans "GeoPackage Manager" %} {% endblock %}
 {% block head %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'gpkg_manager/css/upload.css' %}">
-    <link rel="stylesheet" href="{% static 'gpkg_manager/css/multi-select.dist.css' %}">
+    <link rel="stylesheet" href="{% static 'data_manager/css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'data_manager/css/multi-select.dist.css' %}">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 {% endblock %}
 {% block body %}
@@ -47,7 +47,7 @@
                           </div>
                           <div class="panel-body">
                             <ul class="list-group">
-                                {% for layer in upload.gpkg_manager.get_layers %}
+                                {% for layer in upload.data_manager.get_layers %}
                                     <li class="list-group-item ">
                                       <div class="layer-item flex-element flex-space-between equal-area text-center flex-center">
                                           <span class="text-wrap equal-area text-left">Layer Name: {{layer.name}}</span>
@@ -192,15 +192,15 @@
     </div>
 {% endblock %}
 {% block extra_script %}
-  <script src="{% static 'gpkg_manager/js/jquery.ui.widget.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.iframe-transport.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.fileupload.min.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.multi-select.js' %}"></script>
-  <script src="{% static 'gpkg_manager/js/jquery.quicksearch.js' %}"></script>
+  <script src="{% static 'data_manager/js/jquery.ui.widget.min.js' %}"></script>
+  <script src="{% static 'data_manager/js/jquery.iframe-transport.min.js' %}"></script>
+  <script src="{% static 'data_manager/js/jquery.fileupload.min.js' %}"></script>
+  <script src="{% static 'data_manager/js/jquery.multi-select.js' %}"></script>
+  <script src="{% static 'data_manager/js/jquery.quicksearch.js' %}"></script>
   <script>
     const urls={
       downloadLayers:"{% url 'geopackage_download' %}"
     }
   </script>
-  <script src="{% static 'gpkg_manager/js/upload.js' %}"></script>
+  <script src="{% static 'data_manager/js/upload.js' %}"></script>
  {% endblock %}

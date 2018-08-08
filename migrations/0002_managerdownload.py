@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('gpkg_manager', '0001_initial'),
+        ('data_manager', '0001_initial'),
     ]
 
     operations = [

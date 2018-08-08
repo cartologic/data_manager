@@ -7,6 +7,7 @@ import os
 import pipes
 import subprocess
 import time
+from contextlib import contextmanager
 
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
@@ -41,12 +42,17 @@ class GpkgManager(object):
         return connectionString
 
     @staticmethod
+    @contextmanager
     def open_source(source_path, is_postgres=False):
         full_path = "PG: " + source_path if is_postgres else source_path
-        return ogr.Open(full_path)
+        source = ogr.Open(full_path)
+        yield source
+        source.FlushCache()
+        source = None
 
     def get_source(self, is_postgis=False):
-        self.source = self.open_source(self.path, is_postgres=is_postgis)
+        with self.open_source(self.path, is_postgres=is_postgis) as source:
+            self.source = source
         return self.source
 
     def check_schema_geonode(self, layername, glayername, ignore_case=False):
@@ -163,17 +169,16 @@ class GpkgManager(object):
                          temporary=False,
                          launder=False,
                          name=None):
-        source = self.open_source(connectionString, is_postgres=True)
-        layer = self.source.GetLayerByName(layername)
-        assert layer
-        layer = GpkgLayer(layer, source)
-
-        return layer.copy_to_source(
-            source,
-            overwrite=overwrite,
-            temporary=temporary,
-            launder=launder,
-            name=name)
+        with self.open_source(connectionString, is_postgres=True) as source:
+            layer = self.source.GetLayerByName(layername)
+            assert layer
+            layer = GpkgLayer(layer, source)
+            return layer.copy_to_source(
+                source,
+                overwrite=overwrite,
+                temporary=temporary,
+                launder=launder,
+                name=name)
 
     def layer_to_postgis_cmd(self, layername, connectionString, options=None):
         cmd = self._cmd_lyr_postgis(
@@ -189,16 +194,15 @@ class GpkgManager(object):
     def postgis_as_gpkg(connectionString, dest_path, layernames=None):
         if not dest_path.endswith(".gpkg"):
             dest_path += ".gpkg"
-        postgis_source = GpkgManager.open_source(
-            connectionString, is_postgres=True)
-        ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
-        layers = GpkgManager.get_source_layers(postgis_source) \
-            if not layernames \
-            else [layer for layer in
-                  GpkgManager.get_source_layers(postgis_source)
-                  if layer and layer.name in layernames]
-        for lyr in layers:
-            ds.CopyLayer(lyr.gpkg_layer, lyr.name)
+        with GpkgManager.open_source(connectionString, is_postgres=True) as postgis_source:
+            ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
+            layers = GpkgManager.get_source_layers(postgis_source) \
+                if not layernames \
+                else [layer for layer in
+                      GpkgManager.get_source_layers(postgis_source)
+                      if layer and layer.name in layernames]
+            for lyr in layers:
+                ds.CopyLayer(lyr.gpkg_layer, lyr.name)
 
     @staticmethod
     def backup_portal(dest_path=None):
@@ -213,31 +217,31 @@ class GpkgManager(object):
                     dest_path, os.W_OK):
                 raise Exception(
                     'maybe destination is not writable or not a directory')
-            ds = GpkgManager.open_source(connection_string, is_postgres=True)
-            if ds:
-                all_layers = Layer.objects.all()
-                layer_styles = []
-                table_names = []
-                for layer in all_layers:
-                    typename = str(layer.alternate)
-                    table_name = typename.split(":").pop()
-                    if GpkgManager.source_layer_exists(ds, table_name):
-                        table_names.append(table_name)
-                        gattr = str(
-                            layer.attribute_set.filter(
-                                attribute_type__contains='gml').first()
-                            .attribute)
-                        layer_style = layer.default_style
-                        sld_url = layer_style.sld_url
-                        style_name = str(layer_style.name)
-                        layer_styles.append((table_name, gattr, style_name,
-                                             get_sld_body(sld_url)))
-                GpkgManager.postgis_as_gpkg(
-                    connection_string, package_dir, layernames=table_names)
-                stm = StyleManager(package_dir)
-                stm.create_table()
-                for style in layer_styles:
-                    stm.add_style(*style, default=True)
+            with GpkgManager.open_source(connection_string, is_postgres=True) as ds:
+                if ds:
+                    all_layers = Layer.objects.all()
+                    layer_styles = []
+                    table_names = []
+                    for layer in all_layers:
+                        typename = str(layer.alternate)
+                        table_name = typename.split(":").pop()
+                        if GpkgManager.source_layer_exists(ds, table_name):
+                            table_names.append(table_name)
+                            gattr = str(
+                                layer.attribute_set.filter(
+                                    attribute_type__contains='gml').first()
+                                .attribute)
+                            layer_style = layer.default_style
+                            sld_url = layer_style.sld_url
+                            style_name = str(layer_style.name)
+                            layer_styles.append((table_name, gattr, style_name,
+                                                get_sld_body(sld_url)))
+                    GpkgManager.postgis_as_gpkg(
+                        connection_string, package_dir, layernames=table_names)
+                    stm = StyleManager(package_dir)
+                    stm.create_table()
+                    for style in layer_styles:
+                        stm.add_style(*style, default=True)
             final_path = dest_path
 
         except Exception as e:

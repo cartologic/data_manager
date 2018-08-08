@@ -32,7 +32,7 @@ logger = get_logger(__name__)
 
 
 @login_required
-@permission_required_or_403('gpkg_manager.publish_from_package',
+@permission_required_or_403('data_manager.publish_from_package',
                             (GpkgUpload, 'id', 'upload_id'))
 @require_http_methods([
     'GET',
@@ -47,7 +47,7 @@ def get_compatible_layers(request, upload_id, layername):
         layers = []
         for layer in permitted_layers:
             try:
-                check = obj.gpkg_manager.check_schema_geonode(
+                check = obj.data_manager.check_schema_geonode(
                     layername, str(layer.alternate))
                 lyr = {
                     "name": layer.alternate,
@@ -74,7 +74,7 @@ def get_compatible_layers(request, upload_id, layername):
 
 
 @login_required
-@permission_required_or_403('gpkg_manager.publish_from_package',
+@permission_required_or_403('data_manager.publish_from_package',
                             (GpkgUpload, 'id', 'upload_id'))
 @require_http_methods([
     'GET',
@@ -86,10 +86,10 @@ def reload_layer(request, upload_id, layername, glayername):
                            _PERMISSION_MSG_VIEW)
     try:
         obj = GpkgUpload.objects.get(id=upload_id)
-        gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+        gpkg_layer = obj.data_manager.get_layer_by_name(layername)
         if not gpkg_layer:
             raise GpkgLayerException("No Layer with this name in the package")
-        if not obj.gpkg_manager.check_schema_geonode(layername,
+        if not obj.data_manager.check_schema_geonode(layername,
                                                      str(layer.alternate)):
             raise GpkgLayerException("Invalid schema")
         geonode_manager = GpkgManager(get_connection(), is_postgis=True)
@@ -109,13 +109,13 @@ def reload_layer(request, upload_id, layername, glayername):
 class UploadView(View):
     def get(self, request):
         user = request.user
-        uploads = get_objects_for_user(user, 'gpkg_manager.view_package')
+        uploads = get_objects_for_user(user, 'data_manager.view_package')
         permitted = get_objects_for_user(request.user,
                                          'base.download_resourcebase')
         permitted_layers = Layer.objects.filter(id__in=permitted)
         return render(
             request,
-            "gpkg_manager/upload.html",
+            "data_manager/upload.html",
             context={
                 'uploads':
                 uploads,
@@ -161,7 +161,7 @@ class UploadView(View):
                         reverse(
                             'compatible_layers', args=(obj.id, layer.name))
                     }
-                } for layer in obj.gpkg_manager.get_layers()],
+                } for layer in obj.data_manager.get_layers()],
                 'download_url':
                 obj.package.url,
                 'delete_url':
@@ -173,7 +173,7 @@ class UploadView(View):
 
 
 @login_required
-@permission_required_or_403('gpkg_manager.download_package',
+@permission_required_or_403('data_manager.download_package',
                             (GpkgUpload, 'id', 'upload_id'))
 @require_http_methods([
     'GET',
@@ -200,7 +200,7 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
     glayername = str(glayername)
     try:
         obj = GpkgUpload.objects.get(id=upload_id)
-        check = obj.gpkg_manager.check_schema_geonode(layername, glayername)
+        check = obj.data_manager.check_schema_geonode(layername, glayername)
         data = {"status": "success", "compitable": check}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
@@ -214,7 +214,7 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
 
 
 @login_required
-@permission_required_or_403('gpkg_manager.publish_from_package',
+@permission_required_or_403('data_manager.publish_from_package',
                             (GpkgUpload, 'id', 'upload_id'))
 @time_it
 def publish_layer(request, upload_id, layername, publish_name=None):
@@ -226,7 +226,7 @@ def publish_layer(request, upload_id, layername, publish_name=None):
     gs_layername = str(gs_layername)
     upload = get_object_or_404(GpkgUpload, pk=upload_id)
     if 'publish_from_package' in get_perms(user, upload):
-        manager = upload.gpkg_manager
+        manager = upload.data_manager
         package_layer = manager.get_layer_by_name(layername)
         conn = get_connection()
         gs_pub = GeoserverPublisher()

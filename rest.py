@@ -97,7 +97,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
 
     def dehydrate_layers(self, bundle):
         layers = []
-        for layer in bundle.obj.gpkg_manager.get_layers():
+        for layer in bundle.obj.data_manager.get_layers():
             details_url = bundle.request.build_absolute_uri(
                 reverse(
                     'api_layer_details',
@@ -156,7 +156,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
         return bundle
 
     class Meta:
-        resource_name = "geopackage_manager"
+        resource_name = "data_manager"
         queryset = GpkgUpload.objects.all()
         always_return_data = True
         allowed_methods = ['get', 'post', 'put', 'delete']
@@ -254,10 +254,10 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
         self.is_authenticated(request)
         self.throttle_check(request)
         _GPKG_PERMISSIONS = (
-            ('gpkg_manager.view_package', 'View Geopackge'),
-            ('gpkg_manager.download_package', 'Download Geopackge'),
-            ('gpkg_manager.delete_package', 'Delete Geopackge'),
-            ('gpkg_manager.publish_from_package',
+            ('data_manager.view_package', 'View Geopackge'),
+            ('data_manager.download_package', 'Download Geopackge'),
+            ('data_manager.delete_package', 'Delete Geopackge'),
+            ('data_manager.publish_from_package',
              'Publish Layers from Geopackge'),
         )
         permissions = {}
@@ -332,7 +332,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             if not request.user.has_perm('download_package', obj):
                 return self.get_err_response(request, _PERMISSION_MSG_VIEW,
                                              http.HttpUnauthorized)
-            gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+            gpkg_layer = obj.data_manager.get_layer_by_name(layername)
             if not gpkg_layer:
                 raise GpkgLayerException(
                     "No Layer with this name in the package")
@@ -367,7 +367,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             if not request.user.has_perm('view_package', obj):
                 return self.get_err_response(request, _PERMISSION_MSG_VIEW,
                                              http.HttpUnauthorized)
-            gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+            gpkg_layer = obj.data_manager.get_layer_by_name(layername)
             if not gpkg_layer:
                 raise GpkgLayerException(
                     "No Layer with this name in the package")
@@ -392,11 +392,11 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             if not request.user.has_perm('publish_from_package', obj):
                 return self.get_err_response(request, _PERMISSION_MSG_VIEW,
                                              http.HttpUnauthorized)
-            gpkg_layer = obj.gpkg_manager.get_layer_by_name(layername)
+            gpkg_layer = obj.data_manager.get_layer_by_name(layername)
             if not gpkg_layer:
                 raise GpkgLayerException(
                     "No Layer with this name in the package")
-            if not obj.gpkg_manager.check_schema_geonode(
+            if not obj.data_manager.check_schema_geonode(
                     layername, str(layer.alternate)):
                 raise GpkgLayerException("Invalid schema")
             geonode_manager = GpkgManager(get_connection(), is_postgis=True)
@@ -430,7 +430,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 Permission to View this Package ", http.HttpUnauthorized)
             layers = []
             for layer in permitted_layers:
-                check = obj.gpkg_manager.check_schema_geonode(
+                check = obj.data_manager.check_schema_geonode(
                     layername, str(layer.alternate), ignore_case)
                 if check.get('compatible'):
                     lyr = {
@@ -478,7 +478,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 return self.get_err_response(
                     request, "You Don't Have \
                 Permission to View this Package ", http.HttpUnauthorized)
-            check = obj.gpkg_manager.check_schema_geonode(
+            check = obj.data_manager.check_schema_geonode(
                 layername, glayername, ignore_case)
             return self.create_response(
                 request, check, response_class=http.HttpAccepted)
@@ -517,7 +517,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
         except GpkgUpload.DoesNotExist as e:
             return self.get_err_response(request, e.message, http.HttpNotFound)
         if 'publish_from_package' in get_perms(user, upload):
-            manager = upload.gpkg_manager
+            manager = upload.data_manager
             package_layer = manager.get_layer_by_name(layername)
             if not package_layer:
                 return self.get_err_response(

@@ -7,7 +7,7 @@ except:
 import json
 import os
 from uuid import uuid4
-
+from contextlib import contextmanager
 from esridump.dumper import EsriDumper
 from geonode.people.models import Profile
 from requests.exceptions import ConnectionError
@@ -83,14 +83,19 @@ class EsriHandler(EsriDumper):
         name = SLUGIFIER(name.lower())
         return self._unique_name(name)
 
+    @contextmanager
+    def create_source_layer(self, source, name, projection, gtype, options):
+        layer = source.CreateLayer(
+            str(name), srs=projection, geom_type=gtype, options=options)
+        yield layer
+        layer = None
+
     def esri_to_postgis(self,
                         overwrite=False,
                         temporary=False,
                         launder=False,
                         name=None,
                         geom_name='geom'):
-        source = None
-        layer = None
         gpkg_layer = None
         try:
             es = self.get_esri_serializer()
@@ -98,33 +103,33 @@ class EsriHandler(EsriDumper):
                 name = self.get_new_name(es.get_name())
             feature_iter = iter(self)
             first_feature = feature_iter.next()
-            source = GpkgManager.open_source(
-                get_connection(), is_postgres=True)
-            source.FlushCache()
-            options = [
-                'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
-                'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
-                'LAUNDER={}'.format("YES" if launder else "NO"),
-                'GEOMETRY_NAME={}'.format(geom_name if geom_name else 'geom')
-            ]
-            gtype = es.get_geometry_type()
-            coord_trans = None
-            OSR_WGS84_REF = osr.SpatialReference()
-            OSR_WGS84_REF.ImportFromEPSG(4326)
-            projection = es.get_projection()
-            if projection != OSR_WGS84_REF:
-                coord_trans = osr.CoordinateTransformation(
-                    OSR_WGS84_REF, projection)
-            layer = source.CreateLayer(
-                str(name), srs=projection, geom_type=gtype, options=options)
-            for field in es.build_fields():
-                layer.CreateField(field)
-            layer.StartTransaction()
-            self.create_feature(layer, first_feature, gtype, srs=coord_trans)
-            while True:
-                next_feature = feature_iter.next()
-                self.create_feature(
-                    layer, next_feature, gtype, srs=coord_trans)
+            with GpkgManager.open_source(get_connection(), is_postgres=True) as source:
+                options = [
+                    'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
+                    'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
+                    'LAUNDER={}'.format("YES" if launder else "NO"),
+                    'GEOMETRY_NAME={}'.format(
+                        geom_name if geom_name else 'geom')
+                ]
+                gtype = es.get_geometry_type()
+                coord_trans = None
+                OSR_WGS84_REF = osr.SpatialReference()
+                OSR_WGS84_REF.ImportFromEPSG(4326)
+                projection = es.get_projection()
+                if projection != OSR_WGS84_REF:
+                    coord_trans = osr.CoordinateTransformation(
+                        OSR_WGS84_REF, projection)
+                with self.create_source_layer(source, str(name), projection, gtype, options) as layer:
+                    for field in es.build_fields():
+                        layer.CreateField(field)
+                    layer.StartTransaction()
+                    gpkg_layer = GpkgLayer(layer, source)
+                    self.create_feature(layer, first_feature,
+                                        gtype, srs=coord_trans)
+                    for next_feature in feature_iter:
+                        self.create_feature(
+                            layer, next_feature, gtype, srs=coord_trans)
+                    layer.CommitTransaction()
         except (StopIteration, EsriException, EsriFeatureLayerException,
                 ConnectionError), e:
             logger.debug(e.message)
@@ -134,12 +139,6 @@ class EsriHandler(EsriDumper):
                 layer = None
             logger.error(e.message)
         finally:
-            if source and layer:
-                layer.CommitTransaction()
-                source.FlushCache()
-                gpkg_layer = GpkgLayer(layer, source)
-                source = None
-                layer = None
             return gpkg_layer
 
     def publish(self,
