@@ -35,6 +35,8 @@ def get_sld_body(url):
     return req.text
 
 
-def get_gs_store(storename=ogc_server_settings.datastore_db['NAME'],
+def get_gs_store(storename=None,
                  workspace=DEFAULT_WORKSPACE):
+    if not storename:
+        storename = ogc_server_settings.datastore_db.get('NAME', None)
     return get_store(gs_catalog, storename, workspace)
