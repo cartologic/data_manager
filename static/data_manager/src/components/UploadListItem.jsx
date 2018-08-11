@@ -41,9 +41,9 @@ const styles = theme => ({
         display: 'flex',
         [theme.breakpoints.down('sm')]: {
             flexDirection: 'column',
-            padding:theme.spacing.unit
+            padding: theme.spacing.unit
         },
-        overflow:'hidden',
+        overflow: 'hidden',
         alignItems: 'center'
     },
     table: {
@@ -86,7 +86,7 @@ class UploadListItem extends React.Component {
         })
     }
     render() {
-        const { classes, upload, permissions, setCurrentLayerOpenPublishModal, setCurrentLayerOpenUpdateModal } = this.props
+        const { classes, upload, permissions, setCurrentLayerOpenPublishModal, setCurrentLayerOpenUpdateModal, permissionsLoading } = this.props
         return (
             <ExpansionPanel defaultExpanded>
                 <ExpansionPanelSummary classes={{ content: classes.panelSummary }} expandIcon={<ExpandMoreIcon />}>
@@ -108,7 +108,7 @@ class UploadListItem extends React.Component {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {upload.layers.map((layer, index) => {
+                                {!permissionsLoading && upload.layers.map((layer, index) => {
                                     return (
                                         <TableRow className={classes.row} key={index}>
                                             <TableCell className={classes.textCenter} component="th" scope="row">
@@ -136,10 +136,10 @@ class UploadListItem extends React.Component {
                     </div>
                 </ExpansionPanelDetails>
                 <ExpansionPanelActions>
-                    {checkPermission(permissions, 'download_package', upload.id) && <Button component="a" href={upload.download_url} size="small" variant="outlined" color="primary" className={classes.button}>
+                    {!permissionsLoading && checkPermission(permissions, 'download_package', upload.id) && <Button component="a" href={upload.download_url} size="small" variant="outlined" color="primary" className={classes.button}>
                         {"Download"}
                     </Button>}
-                    {checkPermission(permissions, 'delete_package', upload.id) && <Button onClick={() => this.handleDeleted(upload)} size="small" variant="outlined" color="secondary" className={classes.button}>
+                    {!permissionsLoading && checkPermission(permissions, 'delete_package', upload.id) && <Button onClick={() => this.handleDeleted(upload)} size="small" variant="outlined" color="secondary" className={classes.button}>
                         {"Delete"}
                     </Button>}
                 </ExpansionPanelActions>
@@ -157,13 +157,15 @@ UploadListItem.propTypes = {
     token: PropTypes.string.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
+    permissionsLoading: PropTypes.bool.isRequired,
 }
 const mapStateToProps = (state) => {
     return {
         username: state.username,
         token: state.token,
         urls: state.urls,
-        permissions: state.permissions
+        permissions: state.permissions,
+        permissionsLoading: state.permissionsLoading
     }
 }
 const mapDispatchToProps = (dispatch) => {

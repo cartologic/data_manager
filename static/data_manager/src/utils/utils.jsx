@@ -1,7 +1,6 @@
 function updateProgress(evt) {
     if (evt.lengthComputable) {
         let percentComplete = (evt.loaded / evt.total) * 100
-        console.log("Progress is ----> " + percentComplete)
     }
 }
 

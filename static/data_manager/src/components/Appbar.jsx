@@ -1,5 +1,3 @@
-import 'typeface-roboto'
-
 import AppBar from '@material-ui/core/AppBar'
 import ArcGISLayerModal from './ArcGISLayerModal'
 import Button from '@material-ui/core/Button'
@@ -9,6 +7,7 @@ import React from 'react'
 import Toolbar from '@material-ui/core/Toolbar'
 import Tooltip from '@material-ui/core/Tooltip'
 import Typography from '@material-ui/core/Typography'
+import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/core/styles'
 
 const styles = {
@@ -38,7 +37,7 @@ class GeopackageAppBar extends React.Component {
     }
     render() {
         const { downloadModalOpen, ArcGISModalOpen } = this.state
-        const { classes, title } = this.props
+        const { classes, title, urls } = this.props
         return (
             <div className={classes.root}>
                 <AppBar position="static">
@@ -47,7 +46,7 @@ class GeopackageAppBar extends React.Component {
                             {title}
                         </Typography>
                         <Tooltip title="Import GeoPackage, Shapefile, CSV, Raster or KML">
-                            <Button classes={{ label: classes.capitalize }} onClick={this.handleArcGISModal} color="inherit">{"Upload Shapefile"}</Button>
+                            <Button classes={{ label: classes.capitalize }} onClick={() => window.location.href = urls.layerUpload} color="inherit">{"Upload Shapefile"}</Button>
                         </Tooltip>
                         <Button classes={{ label: classes.capitalize }} onClick={this.handleArcGISModal} color="inherit">{"ArcGIS Publisher"}</Button>
                         <Button classes={{ label: classes.capitalize }} onClick={this.handleDownloadModal} color="inherit">{"Download"}</Button>
@@ -59,8 +58,14 @@ class GeopackageAppBar extends React.Component {
         )
     }
 }
+const mapStateToProps = (state) => {
+    return {
+        urls: state.urls
+    }
+}
 GeopackageAppBar.propTypes = {
     classes: PropTypes.object.isRequired,
     title: PropTypes.string.isRequired,
+    urls: PropTypes.object.isRequired,
 }
-export default withStyles(styles)(GeopackageAppBar)
+export default connect(mapStateToProps, {})(withStyles(styles)(GeopackageAppBar))
