@@ -6,8 +6,9 @@ except:
     from osgeo import ogr, osr
 import json
 import os
-from uuid import uuid4
 from contextlib import contextmanager
+from uuid import uuid4
+
 from esridump.dumper import EsriDumper
 from geonode.people.models import Profile
 from requests.exceptions import ConnectionError

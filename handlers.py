@@ -7,7 +7,6 @@ import os
 import pipes
 import subprocess
 import time
-from contextlib import contextmanager
 
 from django.conf import settings
 from geonode.geoserver.helpers import (get_store, gs_catalog,
@@ -19,36 +18,18 @@ from cartoview.log_handler import get_logger
 from .constants import POSTGIS_OPTIONS, _downloads_dir
 from .exceptions import GpkgLayerException
 from .layer_manager import GpkgLayer, SourceException
+from .mixins import DataManagerMixin
 from .style_manager import StyleManager
 from .utils import get_new_dir, get_sld_body
 
 logger = get_logger(__name__)
 
 
-class GpkgManager(object):
+class GpkgManager(DataManagerMixin):
     def __init__(self, package_path, is_postgis=False):
         self.path = package_path
         self.is_postgis = is_postgis
         self.get_source(is_postgis=is_postgis)
-
-    @staticmethod
-    def build_connection_string(DB_server,
-                                DB_Name,
-                                DB_user,
-                                DB_Pass,
-                                DB_Port=5432):
-        connectionString = "host=%s port=%d dbname=%s user=%s password=%s" % (
-            DB_server, DB_Port, DB_Name, DB_user, DB_Pass)
-        return connectionString
-
-    @staticmethod
-    @contextmanager
-    def open_source(source_path, is_postgres=False):
-        full_path = "PG: " + source_path if is_postgres else source_path
-        source = ogr.Open(full_path)
-        yield source
-        source.FlushCache()
-        source = None
 
     def get_source(self, is_postgis=False):
         with self.open_source(self.path, is_postgres=is_postgis) as source:
@@ -68,43 +49,8 @@ class GpkgManager(object):
         check = GpkgManager.compare_schema(gpkg_layer, glayer, ignore_case)
         return check
 
-    @staticmethod
-    def source_layer_exists(source, layername):
-        layer = source.GetLayerByName(layername)
-        if layer:
-            return True
-        return False
-
-    @staticmethod
-    def compare_schema(layer1, layer2, ignore_case=False):
-        schema1 = layer1.get_full_schema()
-        schema2 = layer2.get_full_schema()
-        if ignore_case:
-            schema1 = [(field[0].lower(), field[1], field[2])
-                       for field in layer1.get_full_schema()]
-            schema2 = [(field[0].lower(), field[1], field[2])
-                       for field in layer2.get_full_schema()]
-        schema1.sort(key=lambda field: field[0])
-        schema2.sort(key=lambda field: field[0])
-        new_fields = [field for field in schema1 if field not in schema2]
-        deleted_fields = [field for field in schema2 if field not in schema1]
-        deleted_fields.sort(key=lambda field: field[0])
-        new_fields.sort(key=lambda field: field[0])
-        return {
-            "compatible": schema1 == schema2,
-            "deleted_fields": deleted_fields,
-            "new_fields": new_fields,
-        }
-
     def layer_exists(self, layername):
         return GpkgManager.source_layer_exists(self.source, layername)
-
-    @staticmethod
-    def get_source_layers(source):
-        return [
-            GpkgLayer(layer, source) for layer in source
-            if layer.GetName() != "layer_styles"
-        ]
 
     def get_layers(self):
         return self.get_source_layers(self.source)
@@ -118,20 +64,8 @@ class GpkgManager(object):
                 self.source.GetLayerByName(layername), self.source)
         return None
 
-    @staticmethod
-    def read_source_schema(source):
-        layers = GpkgManager.get_source_layers(source)
-        return tuple((layer.name,
-                      layer.get_schema() + layer.geometry_fields_schema())
-                     for layer in layers)
-
     def read_schema(self):
         return self.read_source_schema(self.source)
-
-    @staticmethod
-    def get_layers_features(layers):
-        for lyr in layers:
-            yield lyr.get_features()
 
     def get_features(self):
         return self.get_layers_features(self.get_layers())
@@ -235,7 +169,7 @@ class GpkgManager(object):
                             sld_url = layer_style.sld_url
                             style_name = str(layer_style.name)
                             layer_styles.append((table_name, gattr, style_name,
-                                                get_sld_body(sld_url)))
+                                                 get_sld_body(sld_url)))
                     GpkgManager.postgis_as_gpkg(
                         connection_string, package_dir, layernames=table_names)
                     stm = StyleManager(package_dir)
