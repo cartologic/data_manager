@@ -26,10 +26,13 @@ def esri_from_url(self,
                   temporary=False,
                   launder=False,
                   name=None):
+
     eh = EsriHandler(url)
     geonode_layer = eh.publish()
     layer_url = None
     message = None
+    mail_on = settings.EMAIL_ENABLE if hasattr(
+        settings, 'EMAIL_ENABLE') else False
     if geonode_layer:
         site_url = settings.SITEURL
         layer_url = reverse(
@@ -38,7 +41,7 @@ def esri_from_url(self,
         message = "Your Layer Successfully Imported {}".format(url)
     else:
         message = "Failed To Dump Your Layer please Contact Portal Admin"
-    if useremail:
+    if useremail and mail_on:
         msg = EmailMessage(
             'Esri Layer Status',
             message,
