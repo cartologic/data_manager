@@ -5,6 +5,7 @@ from distutils.util import strtobool
 
 from celery.result import AsyncResult
 from django.conf.urls import url
+from .utils import SLUGIFIER, get_sld_body
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import StreamingHttpResponse
@@ -281,23 +282,39 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                     str(layername) for layername in request.GET.get(
                         'layer_names', "").split(',')
                 ]
+                layer_styles = []
                 if len(layer_names) == 0:
                     return self.get_err_response(
                         request,
                         "please provide layer_names as a query paramter ",
                         http.HttpApplicationError)
                 for layername in layer_names:
-                    if Layer.objects.filter(
-                            alternate__contains=layername).count() == 0:
+                    expected = Layer.objects.filter(
+                        alternate__contains=layername)
+                    if expected.count() == 0:
                         return self.get_err_response(
                             request,
                             "No Layer with this name {}".format(layername),
                             http.HttpApplicationError)
+                    layer_style = expected.first().default_style
+                    sld_url = layer_style.sld_url
+                    style_name = str(layer_style.name)
+                    gattr = str(
+                        expected.first().attribute_set.filter(
+                            attribute_type__contains='gml').first().attribute)
+                    layer_styles.append((layername, gattr, style_name,
+                                         get_sld_body(sld_url)))
                 file_name = str(request.GET.get('file_name', "download.gpkg"))
                 download_dir = GpkgLayer._get_new_dir(base_dir=_downloads_dir)
                 file_path = os.path.join(download_dir, file_name)
-                GpkgManager.postgis_as_gpkg(get_connection(), file_path,
-                                            layer_names)
+                dest_path = GpkgManager.postgis_as_gpkg(get_connection(),
+                                                        file_path,
+                                                        layer_names)
+                stm = StyleManager(dest_path)
+                stm.create_table()
+                for style in layer_styles:
+                    stm.add_style(*style, default=True)
+
                 download_obj = ManagerDownload.objects.create(
                     user=request.user, file_path=file_path)
                 url = request.build_absolute_uri(

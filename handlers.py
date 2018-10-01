@@ -137,6 +137,7 @@ class GpkgManager(DataManagerMixin):
                       if layer and layer.name in layernames]
             for lyr in layers:
                 ds.CopyLayer(lyr.gpkg_layer, lyr.name)
+        return dest_path
 
     @staticmethod
     def backup_portal(dest_path=None):
