@@ -12,7 +12,7 @@ api.register(GpkgUploadResource())
 api.register(ManagerDownloadResource())
 urlpatterns = [
     url(r'^upload/', UploadView.as_view(), name="geopackage_upload"),
-    url(r'^upload/', UploadView.as_view(), name="%s.index" % (APP_NAME)),
+    url(r'^$', UploadView.as_view(), name="%s.index" % (APP_NAME)),
     url(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)$',
         publish_layer,
         name="geopackage_publish"),
