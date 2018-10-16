@@ -19,11 +19,13 @@ from geonode.people.models import Profile
 from geonode.security.views import _perms_info_json
 from requests.auth import HTTPBasicAuth
 
-from cartoview.log_handler import get_logger
-
 from .helpers import urljoin
 from .utils import SLUGIFIER
 
+try:
+    from celery.utils.log import get_task_logger as get_logger
+except ImportError:
+    from cartoview.log_handler import get_logger
 logger = get_logger(__name__)
 
 DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
@@ -138,7 +140,6 @@ class GeoserverPublisher(object):
             gs_catalog.save(layer)
             saved = True
         except Exception as e:
-            print e.message
             logger.error(e.message)
         return saved
 

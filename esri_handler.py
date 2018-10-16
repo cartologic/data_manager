@@ -14,7 +14,6 @@ from geonode.people.models import Profile
 from requests.exceptions import ConnectionError
 
 from ags2sld.handlers import Layer as AgsLayer
-from cartoview.log_handler import get_logger
 
 from .exceptions import EsriException, EsriFeatureLayerException
 from .handlers import GpkgManager, get_connection
@@ -23,6 +22,12 @@ from .layer_manager import GpkgLayer
 from .publishers import ICON_REL_PATH, GeonodePublisher, GeoserverPublisher
 from .serializers import EsriSerializer
 from .utils import SLUGIFIER, get_new_dir
+
+try:
+    from celery.utils.log import get_task_logger as get_logger
+except ImportError:
+    from cartoview.log_handler import get_logger
+
 
 logger = get_logger(__name__)
 
