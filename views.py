@@ -21,7 +21,7 @@ from cartoview.log_handler import get_logger
 from .decorators import time_it
 from .exceptions import GpkgLayerException
 from .forms import GpkgUploadForm
-from .handlers import GpkgManager, get_connection
+from .handlers import DataManager, get_connection
 from .models import GpkgUpload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
@@ -92,7 +92,7 @@ def reload_layer(request, upload_id, layername, glayername):
         if not obj.data_manager.check_schema_geonode(layername,
                                                      str(layer.alternate)):
             raise GpkgLayerException("Invalid schema")
-        geonode_manager = GpkgManager(get_connection(), is_postgis=True)
+        geonode_manager = DataManager(get_connection(), is_postgis=True)
         gpkg_layer.copy_to_source(
             geonode_manager.source,
             overwrite=True,
@@ -312,7 +312,7 @@ def download_layers(request):
     permitted_layers = [
         layer for layer in permitted_layers if layer.alternate in layernames
     ]
-    ds = GpkgManager.open_source(get_connection(), is_postgres=True)
+    ds = DataManager.open_source(get_connection(), is_postgres=True)
     if not ds:
         return HttpResponseForbidden("Cannot connect to database")
     layer_styles = []
@@ -320,7 +320,7 @@ def download_layers(request):
     for layer in permitted_layers:
         typename = str(layer.alternate)
         table_name = typename.split(":").pop()
-        if GpkgManager.source_layer_exists(ds, table_name):
+        if DataManager.source_layer_exists(ds, table_name):
             table_names.append(table_name)
             gattr = str(
                 layer.attribute_set.filter(
@@ -330,7 +330,7 @@ def download_layers(request):
             style_name = str(layer_style.name)
             layer_styles.append((table_name, gattr, style_name,
                                  get_sld_body(sld_url)))
-    GpkgManager.postgis_as_gpkg(
+    DataManager.postgis_as_gpkg(
         get_connection(), package_path, layernames=table_names)
     stm = StyleManager(package_path)
     stm.create_table()

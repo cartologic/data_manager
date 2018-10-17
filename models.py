@@ -9,7 +9,7 @@ from geonode.people.models import Profile
 from guardian.shortcuts import assign_perm, get_anonymous_user
 from tastypie.models import create_api_key
 from django.utils import timezone
-from .handlers import GpkgManager
+from .handlers import DataManager
 from .style_manager import StyleManager
 
 GPKG_PERMISSIONS = (
@@ -62,7 +62,7 @@ class GpkgUpload(models.Model):
 
     @property
     def data_manager(self):
-        return GpkgManager(self.package.path, is_postgis=False)
+        return DataManager(self.package.path, is_postgis=False)
 
     @property
     def style_manager(self):

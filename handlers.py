@@ -25,7 +25,7 @@ from .utils import get_new_dir, get_sld_body
 logger = get_logger(__name__)
 
 
-class GpkgManager(DataManagerMixin):
+class DataManager(DataManagerMixin):
     def __init__(self, package_path, is_postgis=False):
         self.path = package_path
         self.is_postgis = is_postgis
@@ -41,16 +41,16 @@ class GpkgManager(DataManagerMixin):
         glayer = Layer.objects.get(alternate=glayername)
         if not gpkg_layer:
             raise SourceException("Cannot find this layer in Source")
-        geonode_manager = GpkgManager(get_connection(), is_postgis=True)
+        geonode_manager = DataManager(get_connection(), is_postgis=True)
         glayer = geonode_manager.get_layer_by_name(glayername.split(":").pop())
         if not glayer:
             raise GpkgLayerException(
                 "Layer {} Cannot be found in Source".format(glayername))
-        check = GpkgManager.compare_schema(gpkg_layer, glayer, ignore_case)
+        check = DataManager.compare_schema(gpkg_layer, glayer, ignore_case)
         return check
 
     def layer_exists(self, layername):
-        return GpkgManager.source_layer_exists(self.source, layername)
+        return DataManager.source_layer_exists(self.source, layername)
 
     def get_layers(self):
         return self.get_source_layers(self.source)
@@ -128,12 +128,12 @@ class GpkgManager(DataManagerMixin):
     def postgis_as_gpkg(connectionString, dest_path, layernames=None):
         if not dest_path.endswith(".gpkg"):
             dest_path += ".gpkg"
-        with GpkgManager.open_source(connectionString, is_postgres=True) as postgis_source:
+        with DataManager.open_source(connectionString, is_postgres=True) as postgis_source:
             ds = ogr.GetDriverByName('GPKG').CreateDataSource(dest_path)
-            layers = GpkgManager.get_source_layers(postgis_source) \
+            layers = DataManager.get_source_layers(postgis_source) \
                 if not layernames \
                 else [layer for layer in
-                      GpkgManager.get_source_layers(postgis_source)
+                      DataManager.get_source_layers(postgis_source)
                       if layer and layer.name in layernames]
             for lyr in layers:
                 ds.CopyLayer(lyr.gpkg_layer, lyr.name)
@@ -152,7 +152,7 @@ class GpkgManager(DataManagerMixin):
                     dest_path, os.W_OK):
                 raise Exception(
                     'maybe destination is not writable or not a directory')
-            with GpkgManager.open_source(connection_string, is_postgres=True) as ds:
+            with DataManager.open_source(connection_string, is_postgres=True) as ds:
                 if ds:
                     all_layers = Layer.objects.all()
                     layer_styles = []
@@ -160,7 +160,7 @@ class GpkgManager(DataManagerMixin):
                     for layer in all_layers:
                         typename = str(layer.alternate)
                         table_name = typename.split(":").pop()
-                        if GpkgManager.source_layer_exists(ds, table_name):
+                        if DataManager.source_layer_exists(ds, table_name):
                             table_names.append(table_name)
                             gattr = str(
                                 layer.attribute_set.filter(
@@ -171,7 +171,7 @@ class GpkgManager(DataManagerMixin):
                             style_name = str(layer_style.name)
                             layer_styles.append((table_name, gattr, style_name,
                                                  get_sld_body(sld_url)))
-                    GpkgManager.postgis_as_gpkg(
+                    DataManager.postgis_as_gpkg(
                         connection_string, package_dir, layernames=table_names)
                     stm = StyleManager(package_dir)
                     stm.create_table()
@@ -194,5 +194,5 @@ def get_connection():
     password = db['PASSWORD']
     host = store.connection_parameters['host']
     port = store.connection_parameters['port']
-    return GpkgManager.build_connection_string(host, db_name, user, password,
+    return DataManager.build_connection_string(host, db_name, user, password,
                                                int(port) if port else 5432)

@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from geonode.layers.models import Layer
 
-from data_manager.handlers import GpkgManager, get_connection
+from data_manager.handlers import DataManager, get_connection
 from data_manager.style_manager import StyleManager
 from data_manager.utils import get_sld_body
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
 
             def progress():
                 global package_dir
-                package_dir = GpkgManager.backup_portal(dest_path=dest_dir)
+                package_dir = DataManager.backup_portal(dest_path=dest_dir)
 
             backup_process = multiprocessing.Process(target=progress)
             backup_process.start()

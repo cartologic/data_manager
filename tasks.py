@@ -7,14 +7,14 @@ from django.core.urlresolvers import reverse
 from cartoview.log_handler import get_logger
 
 from .esri_handler import EsriHandler
-from .handlers import GpkgManager
+from .handlers import DataManager
 from .helpers import urljoin
 logger = get_logger(__name__)
 
 
 @app.task(bind=True)
 def backup_portal_layer(self):
-    path = GpkgManager.backup_portal()
+    path = DataManager.backup_portal()
     return path
 
 

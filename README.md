@@ -2,7 +2,7 @@
   <img src="http://www.geopackage.org/img/geopkg.png" width="200"/>
 </p>
 
-# GeoPackage Manager
+# Data Manager
 Cartoview app to upload, download and backup/restore layers from the portal in GPKG/GeoPackage Format
 
 ## TODO:

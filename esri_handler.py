@@ -16,7 +16,7 @@ from requests.exceptions import ConnectionError
 from ags2sld.handlers import Layer as AgsLayer
 
 from .exceptions import EsriException, EsriFeatureLayerException
-from .handlers import GpkgManager, get_connection
+from .handlers import DataManager, get_connection
 from .helpers import urljoin
 from .layer_manager import GpkgLayer
 from .publishers import ICON_REL_PATH, GeonodePublisher, GeoserverPublisher
@@ -109,7 +109,8 @@ class EsriHandler(EsriDumper):
                 name = self.get_new_name(es.get_name())
             feature_iter = iter(self)
             first_feature = feature_iter.next()
-            with GpkgManager.open_source(get_connection(), is_postgres=True) as source:
+            with DataManager.open_source(get_connection(),
+                                         is_postgres=True) as source:
                 options = [
                     'OVERWRITE={}'.format("YES" if overwrite else 'NO'),
                     'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
@@ -125,7 +126,8 @@ class EsriHandler(EsriDumper):
                 if projection != OSR_WGS84_REF:
                     coord_trans = osr.CoordinateTransformation(
                         OSR_WGS84_REF, projection)
-                with self.create_source_layer(source, str(name), projection, gtype, options) as layer:
+                with self.create_source_layer(source, str(name), projection,
+                                              gtype, options) as layer:
                     for field in es.build_fields():
                         layer.CreateField(field)
                     layer.StartTransaction()

@@ -28,7 +28,7 @@ from .authorization import GpkgAuthorization
 from .constants import _downloads_dir
 from .decorators import FORMAT_EXT, time_it
 from .exceptions import GpkgLayerException
-from .handlers import GpkgLayer, GpkgManager, get_connection
+from .handlers import GpkgLayer, DataManager, get_connection
 from .helpers import read_in_chunks
 from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
@@ -45,7 +45,7 @@ def ensure_postgis_connection(func):
     def wrap(request, *args, **kwargs):
         this = args[0]
         conn = get_connection()
-        source = GpkgManager.open_source(conn, is_postgres=True)
+        source = DataManager.open_source(conn, is_postgres=True)
         if not source:
             return this.get_err_response(
                 request, "Cannot Connect To Postgres Please Contact the admin",
@@ -307,7 +307,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 file_name = str(request.GET.get('file_name', "download.gpkg"))
                 download_dir = GpkgLayer._get_new_dir(base_dir=_downloads_dir)
                 file_path = os.path.join(download_dir, file_name)
-                dest_path = GpkgManager.postgis_as_gpkg(get_connection(),
+                dest_path = DataManager.postgis_as_gpkg(get_connection(),
                                                         file_path,
                                                         layer_names)
                 stm = StyleManager(dest_path)
@@ -416,7 +416,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             if not obj.data_manager.check_schema_geonode(
                     layername, str(layer.alternate)):
                 raise GpkgLayerException("Invalid schema")
-            geonode_manager = GpkgManager(get_connection(), is_postgis=True)
+            geonode_manager = DataManager(get_connection(), is_postgis=True)
             gpkg_layer.copy_to_source(
                 geonode_manager.source,
                 overwrite=True,
