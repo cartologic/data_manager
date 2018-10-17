@@ -171,7 +171,8 @@ class GeonodePublisher(object):
     def publish(self, layername):
         resource = gs_catalog.get_resource(
             layername, store=self.store, workspace=self.workspace)
-        assert resource
+        if not resource:
+            raise Exception("Cannot Find Resource")
         name = resource.name
         the_store = resource.store
         workspace = the_store.workspace
@@ -182,31 +183,22 @@ class GeonodePublisher(object):
                 name=name,
                 workspace=workspace.name,
                 defaults={
-                    "store":
-                    the_store.name,
-                    "storeType":
-                    the_store.resource_type,
+                    "store": the_store.name,
+                    "storeType": the_store.resource_type,
                     "alternate":
                     "%s:%s" % (workspace.name.encode('utf-8'),
                                resource.name.encode('utf-8')),
                     "title": (resource.title or 'No title provided'),
                     "abstract":
-                    resource.abstract
-                    or unicode(_('No abstract provided')).encode('utf-8'),
-                    "owner":
-                    self.owner,
-                    "uuid":
-                    str(uuid.uuid4()),
-                    "bbox_x0":
-                    Decimal(resource.native_bbox[0]),
-                    "bbox_x1":
-                    Decimal(resource.native_bbox[1]),
-                    "bbox_y0":
-                    Decimal(resource.native_bbox[2]),
-                    "bbox_y1":
-                    Decimal(resource.native_bbox[3]),
-                    "srid":
-                    resource.projection
+                    (resource.abstract
+                     or unicode(_('No abstract provided')).encode('utf-8')),
+                    "owner": self.owner,
+                    "uuid": str(uuid.uuid4()),
+                    "bbox_x0": Decimal(resource.native_bbox[0]),
+                    "bbox_x1": Decimal(resource.native_bbox[1]),
+                    "bbox_y0": Decimal(resource.native_bbox[2]),
+                    "bbox_y1": Decimal(resource.native_bbox[3]),
+                    "srid": resource.projection
                 })
             logger.warning("=========> Settting permissions")
             # sync permissions in GeoFence

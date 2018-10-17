@@ -172,8 +172,8 @@ class EsriHandler(EsriDumper):
                     agsURL + "/", int(agsId), dump_folder=tmp_dir)
                 try:
                     ags_layer.dump_sld_file()
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(e.message)
                 sld_path = None
                 icon_paths = []
                 for file in os.listdir(tmp_dir):
