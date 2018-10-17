@@ -105,3 +105,4 @@ venv.bak/
 downloads
 tmp_generator
 node_modules
+libs
