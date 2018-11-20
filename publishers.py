@@ -70,7 +70,10 @@ class GeoserverPublisher(object):
             json={"featureType": {
                 "name": layername,
                 "nativeName": tablename
-            }})
+            }}, allow_redirects=True, verify=False)
+        logger.error("url: {}, status:{}".format(
+            self.featureTypes_url, req.status_code))
+        logger.error(req.text)
         if req.status_code == 201:
             return True
         return False

@@ -40,3 +40,8 @@ def get_gs_store(storename=None,
     if not storename:
         storename = ogc_server_settings.datastore_db.get('NAME', None)
     return get_store(gs_catalog, storename, workspace)
+
+
+def get_store_schema(storename=ogc_server_settings.datastore_db['NAME']):
+    store = get_store(gs_catalog, storename, settings.DEFAULT_WORKSPACE)
+    return store.connection_parameters.get('schema', 'public')

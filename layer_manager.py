@@ -11,7 +11,7 @@ from cartoview.log_handler import get_logger
 from .constants import _downloads_dir, _temp_dir
 from .decorators import FORMAT_EXT, ensure_supported_format
 from .exceptions import SourceException
-from .utils import SLUGIFIER, get_new_dir
+from .utils import SLUGIFIER, get_new_dir, get_store_schema
 
 try:
     import ogr
@@ -97,6 +97,11 @@ class GpkgLayer(object):
     def delete(self):
         self.source.DeleteLayer(self.name)
 
+    @property
+    def is_postgis(self):
+        name = self.source.GetDriver().GetName()
+        return name in ['PostgreSQL', 'PostGIS']
+
     def copy_to_source(self,
                        dest_source,
                        overwrite=True,
@@ -108,6 +113,8 @@ class GpkgLayer(object):
             'TEMPORARY={}'.format("OFF" if not temporary else "ON"),
             'LAUNDER={}'.format("YES" if launder else "NO"),
         ]
+        if self.is_postgis:
+            options.append('SCHEMA={}'.format(get_store_schema()))
         name = self.name if not name else name
         geom_schema = self.geometry_fields_schema()
         if dest_source:
