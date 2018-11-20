@@ -53,7 +53,7 @@ class GeoserverPublisher(object):
     @property
     def featureTypes_url(self):
         return urljoin(self.base_url, "rest/workspaces/", self.workspace,
-                       "/datastores/", self.datastore, "/featuretypes")
+                       "datastores/", self.datastore, "featuretypes")
 
     @property
     def gwc_url(self):
@@ -172,7 +172,7 @@ class GeonodePublisher(object):
         resource = gs_catalog.get_resource(
             layername, store=self.store, workspace=self.workspace)
         if not resource:
-            raise Exception("Cannot Find Resource")
+            raise Exception("Cannot Find Layer In Geoserver")
         name = resource.name
         the_store = resource.store
         workspace = the_store.workspace
