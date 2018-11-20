@@ -45,12 +45,12 @@ def ensure_postgis_connection(func):
     def wrap(request, *args, **kwargs):
         this = args[0]
         conn = get_connection()
-        source = DataManager.open_source(conn, is_postgres=True)
-        if not source:
-            return this.get_err_response(
-                request, "Cannot Connect To Postgres Please Contact the admin",
-                http.HttpApplicationError)
-        return func(request, *args, **kwargs)
+        with DataManager.open_source(conn, is_postgres=True) as source:
+            if not source:
+                return this.get_err_response(
+                    request, "Cannot Connect To Postgres Please Contact the admin",
+                    http.HttpApplicationError)
+            return func(request, *args, **kwargs)
 
     return wrap
 
@@ -552,8 +552,11 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 layername, conn, overwrite=replace, name=gs_layername)
             if not publish_name:
                 gs_layername = package_layer.get_new_name()
-            gs_pub.publish_postgis_layer(tablename, layername=gs_layername)
+            geoserver_published = gs_pub.publish_postgis_layer(
+                tablename, layername=gs_layername)
             try:
+                if not geoserver_published:
+                    raise Exception("Failed To Publish Layer to Geoserver")
                 layer = geonode_pub.publish(gs_layername)
                 if layer:
                     gpkg_style = stm.get_style(layername)
@@ -591,8 +594,8 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 if tablename:
                     logger.error(
                         "DELETING Table {} from source".format(tablename))
-                    source = manager.open_source(conn, True)
-                    source.DeleteLayer(tablename)
+                    with manager.open_source(conn, True) as source:
+                        source.DeleteLayer(tablename)
                 if gs_layername and Layer.objects.filter(
                         alternate__icontains=gs_layername).count() == 0:
                     gs_pub.delete_layer(gs_layername)

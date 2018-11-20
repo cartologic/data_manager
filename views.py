@@ -264,8 +264,8 @@ def publish_layer(request, upload_id, layername, publish_name=None):
             logger.error(e.message)
             if tablename:
                 logger.error("DELETING Table {} from source".format(tablename))
-                source = manager.open_source(conn, True)
-                source.DeleteLayer(tablename)
+                with manager.open_source(conn, True) as source:
+                    source.DeleteLayer(tablename)
             if gs_layername and Layer.objects.filter(
                     alternate__icontains=gs_layername).count() == 0:
                 gs_pub.delete_layer(gs_layername)
@@ -312,28 +312,28 @@ def download_layers(request):
     permitted_layers = [
         layer for layer in permitted_layers if layer.alternate in layernames
     ]
-    ds = DataManager.open_source(get_connection(), is_postgres=True)
-    if not ds:
-        return HttpResponseForbidden("Cannot connect to database")
-    layer_styles = []
-    table_names = []
-    for layer in permitted_layers:
-        typename = str(layer.alternate)
-        table_name = typename.split(":").pop()
-        if DataManager.source_layer_exists(ds, table_name):
-            table_names.append(table_name)
-            gattr = str(
-                layer.attribute_set.filter(
-                    attribute_type__contains='gml').first().attribute)
-            layer_style = layer.default_style
-            sld_url = layer_style.sld_url
-            style_name = str(layer_style.name)
-            layer_styles.append((table_name, gattr, style_name,
-                                 get_sld_body(sld_url)))
-    DataManager.postgis_as_gpkg(
-        get_connection(), package_path, layernames=table_names)
-    stm = StyleManager(package_path)
-    stm.create_table()
-    for style in layer_styles:
-        stm.add_style(*style, default=True)
-    return redirect(os.path.join(settings.MEDIA_URL, package_url))
+    with DataManager.open_source(get_connection(), is_postgres=True) as ds:
+        if not ds:
+            return HttpResponseForbidden("Cannot connect to database")
+        layer_styles = []
+        table_names = []
+        for layer in permitted_layers:
+            typename = str(layer.alternate)
+            table_name = typename.split(":").pop()
+            if DataManager.source_layer_exists(ds, table_name):
+                table_names.append(table_name)
+                gattr = str(
+                    layer.attribute_set.filter(
+                        attribute_type__contains='gml').first().attribute)
+                layer_style = layer.default_style
+                sld_url = layer_style.sld_url
+                style_name = str(layer_style.name)
+                layer_styles.append((table_name, gattr, style_name,
+                                     get_sld_body(sld_url)))
+        DataManager.postgis_as_gpkg(
+            get_connection(), package_path, layernames=table_names)
+        stm = StyleManager(package_path)
+        stm.create_table()
+        for style in layer_styles:
+            stm.add_style(*style, default=True)
+        return redirect(os.path.join(settings.MEDIA_URL, package_url))
