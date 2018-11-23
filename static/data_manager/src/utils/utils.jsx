@@ -25,6 +25,7 @@ export class ApiRequests {
     doPost(url, data, extraHeaders = {}) {
         return fetch(url, {
             method: 'POST',
+            redirect: 'follow',
             credentials: 'include',
             headers: new Headers({
                 'Authorization': `ApiKey ${this.username}:${this.token}`,
@@ -36,6 +37,7 @@ export class ApiRequests {
     doDelete(url, extraHeaders = {}) {
         return fetch(url, {
             method: 'DELETE',
+            redirect: 'follow',
             credentials: 'include',
             headers: {
                 'Authorization': `ApiKey ${this.username}:${this.token}`,
@@ -46,6 +48,7 @@ export class ApiRequests {
     doGet(url, extraHeaders = {}) {
         return fetch(url, {
             method: 'GET',
+            redirect: 'follow',
             credentials: 'include',
             headers: {
                 'Authorization': `ApiKey ${this.username}:${this.token}`,
