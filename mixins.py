@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 try:
     from osgeo import ogr
-except:
+except ImportError:
     import ogr
 
 

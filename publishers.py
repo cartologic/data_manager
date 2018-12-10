@@ -93,6 +93,8 @@ class GeoserverPublisher(object):
             data=file.read(),
             headers={'Content-Type': 'application/octet-stream'},
             auth=HTTPBasicAuth(self.username, self.password))
+        message = "URL:{} STATUS:".format(url, req.status_code)
+        logger.error(message)
         if req.status_code == 201:
             return True
         return False
@@ -154,7 +156,7 @@ class GeoserverPublisher(object):
             # the following line for compatiblilty 2.8rc11 and 2.8
             try:
                 helpers._stylefilterparams_geowebcache_layer(typename)
-            except:
+            except BaseException:
                 pass
             logger.warning("Layer Cache Cleared")
         except BaseException as e:
@@ -177,6 +179,7 @@ class GeonodePublisher(object):
         if not resource:
             raise Exception("Cannot Find Layer In Geoserver")
         name = resource.name
+        logger.error(resource.__dict__)
         the_store = resource.store
         workspace = the_store.workspace
         layer = None
@@ -185,6 +188,7 @@ class GeonodePublisher(object):
             layer, created = Layer.objects.get_or_create(
                 name=name,
                 workspace=workspace.name,
+
                 defaults={
                     "store": the_store.name,
                     "storeType": the_store.resource_type,
@@ -193,8 +197,8 @@ class GeonodePublisher(object):
                                resource.name.encode('utf-8')),
                     "title": (resource.title or 'No title provided'),
                     "abstract":
-                    (resource.abstract
-                     or unicode(_('No abstract provided')).encode('utf-8')),
+                    (resource.abstract or
+                     unicode(_('No abstract provided')).encode('utf-8')),
                     "owner": self.owner,
                     "uuid": str(uuid.uuid4()),
                     "bbox_x0": Decimal(resource.native_bbox[0]),

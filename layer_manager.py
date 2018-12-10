@@ -15,7 +15,7 @@ from .utils import SLUGIFIER, get_new_dir, get_store_schema
 
 try:
     import ogr
-except:
+except ImportError:
     from osgeo import ogr
 logger = get_logger(__name__)
 

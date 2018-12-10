@@ -34,7 +34,6 @@ from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
 from .tasks import esri_from_url
-from .utils import SLUGIFIER
 
 logger = get_logger(__name__)
 

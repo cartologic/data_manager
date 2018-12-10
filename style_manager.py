@@ -13,7 +13,7 @@ from .utils import SLUGIFIER
 
 try:
     import _sqlite3 as sqlite3
-except:
+except ImportError:
     import sqlite3
 
 
