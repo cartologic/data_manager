@@ -6,8 +6,8 @@
     <title>Data Manager</title>
     <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}cartoview/img/icon.png" />
-    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}?version=1.1.1">
-    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}?version=1.1.1">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}?version=0.9.3">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}?version=0.9.3">
     <style>
         html,body {
             height: 100%;
@@ -20,8 +20,8 @@
 </head>
 <body>
 <div style="height: 100%;" id="react-app"></div>
-<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=1.1.1"></script>
-  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=1.1.1"></script>
+<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=0.9.3"></script>
+  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=0.9.3"></script>
   <script>
     const urls={
       uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='data_manager' %}",
@@ -31,13 +31,13 @@
       esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='data_manager' %}",
       layerUpload:"{% url 'layer_upload' %}",
       publishURL:function(upload_id,layername){
-        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/publish/"
+        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/publish/"
       },
       compareLayerURL:function(upload_id,layername,glayername){
-        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
+        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
       },
       reloadURL:function(upload_id,layername,glayername){
-        return "/data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
+        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
       }
     }
     var downloadableLayers={{download_layers|dump_json}}
