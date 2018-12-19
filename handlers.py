@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 try:
     import ogr
-except:
+except ImportError:
     from osgeo import ogr
 import os
 import pipes
 import subprocess
 import time
 
-from django.conf import settings
-from geonode.geoserver.helpers import (get_store, gs_catalog,
-                                       ogc_server_settings)
-from geonode.layers.models import Layer
-
 from cartoview.log_handler import get_logger
+from geonode.geoserver.helpers import ogc_server_settings
+from geonode.layers.models import Layer
 
 from .constants import POSTGIS_OPTIONS, _downloads_dir
 from .exceptions import GpkgLayerException

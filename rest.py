@@ -41,15 +41,16 @@ _PERMISSION_MSG_VIEW = ('You don\'t have permissions for this action')
 
 
 def ensure_postgis_connection(func):
-    def wrap(request, *args, **kwargs):
+    def wrap(*args, **kwargs):
         this = args[0]
+        request = args[1]
         conn = get_connection()
         with DataManager.open_source(conn, is_postgres=True) as source:
             if not source:
                 return this.get_err_response(
                     request, "Cannot Connect To Postgres Please Contact the admin",
                     http.HttpApplicationError)
-            return func(request, *args, **kwargs)
+            return func(*args, **kwargs)
 
     return wrap
 

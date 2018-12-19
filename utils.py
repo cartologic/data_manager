@@ -5,12 +5,12 @@ from uuid import uuid4
 
 import requests
 from django.conf import settings
-from geonode.geoserver.helpers import (get_store, gs_catalog,
-                                       ogc_server_settings)
 from requests.auth import HTTPBasicAuth
 from slugify import Slugify
 
 from cartoview.app_manager.helpers import create_direcotry
+from geonode.geoserver.helpers import (get_store, gs_catalog,
+                                       ogc_server_settings)
 
 from .constants import _temp_dir
 
