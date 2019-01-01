@@ -53,6 +53,8 @@ def _psycopg2(conn_str):
     try:
         import psycopg2
         conn = psycopg2.connect(conn_str)
+        cur = conn.cursor()
+        cur.execute("SELECT version();")
         conn.close()
         connected = True
     except BaseException:
@@ -66,7 +68,8 @@ def _django_connection():
         ds_conn_name = ogc_server_settings.server.get('DATASTORE', None)
         conn = connections[ds_conn_name]
         conn.connect()
-        conn.cursor()
+        cur = conn.cursor()
+        cur.execute("SELECT version();")
         conn.close()
         connected = True
     except BaseException:

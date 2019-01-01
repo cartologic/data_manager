@@ -47,7 +47,7 @@ def ensure_postgis_connection(func):
         conn = get_connection()
         connected = _psycopg2(conn)
         if not connected:
-            connected = _django_connection(conn)
+            connected = _django_connection()
         if not connected:
             return this.get_err_response(
                 request, "Cannot Connect To Postgres Please Contact the admin",
