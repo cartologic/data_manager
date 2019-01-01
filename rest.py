@@ -5,14 +5,10 @@ from distutils.util import strtobool
 
 from celery.result import AsyncResult
 from django.conf.urls import url
-from .utils import SLUGIFIER, get_sld_body
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import StreamingHttpResponse
 from django.utils.decorators import method_decorator
-from geonode.api.api import ProfileResource
-from geonode.layers.models import Layer
-from geonode.layers.views import _resolve_layer
 from guardian.shortcuts import get_objects_for_user, get_perms
 from tastypie import fields, http
 from tastypie.authentication import (BasicAuthentication, MultiAuthentication,
@@ -22,18 +18,22 @@ from tastypie.resources import ModelResource
 from tastypie.utils import trailing_slash
 
 from cartoview.log_handler import get_logger
+from geonode.api.api import ProfileResource
+from geonode.layers.models import Layer
+from geonode.layers.views import _resolve_layer
 
 from .auth import ApiKeyPatch
 from .authorization import GpkgAuthorization
 from .constants import _downloads_dir
 from .decorators import FORMAT_EXT, time_it
 from .exceptions import GpkgLayerException
-from .handlers import GpkgLayer, DataManager, get_connection
+from .handlers import DataManager, GpkgLayer, get_connection
 from .helpers import read_in_chunks
 from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
 from .tasks import esri_from_url
+from .utils import SLUGIFIER, _django_connection, _psycopg2, get_sld_body
 
 logger = get_logger(__name__)
 
@@ -45,12 +45,14 @@ def ensure_postgis_connection(func):
         this = args[0]
         request = args[1]
         conn = get_connection()
-        with DataManager.open_source(conn, is_postgres=True) as source:
-            if not source:
-                return this.get_err_response(
-                    request, "Cannot Connect To Postgres Please Contact the admin",
-                    http.HttpApplicationError)
-            return func(*args, **kwargs)
+        connected = _psycopg2(conn)
+        if not connected:
+            connected = _django_connection(conn)
+        if not connected:
+            return this.get_err_response(
+                request, "Cannot Connect To Postgres Please Contact the admin",
+                http.HttpApplicationError)
+        return func(*args, **kwargs)
 
     return wrap
 

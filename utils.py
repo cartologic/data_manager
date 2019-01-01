@@ -47,3 +47,28 @@ def get_store_schema(storename=None):
         storename = ogc_server_settings.datastore_db.get('NAME')
     store = get_store(gs_catalog, storename, settings.DEFAULT_WORKSPACE)
     return store.connection_parameters.get('schema', 'public')
+
+
+def _psycopg2(conn_str):
+    try:
+        import psycopg2
+        conn = psycopg2.connect(conn_str)
+        conn.close()
+        connected = True
+    except BaseException:
+        connected = False
+    return connected
+
+
+def _django_connection():
+    try:
+        from django.db import connections
+        ds_conn_name = ogc_server_settings.server.get('DATASTORE', None)
+        conn = connections[ds_conn_name]
+        conn.connect()
+        conn.cursor()
+        conn.close()
+        connected = True
+    except BaseException:
+        connected = False
+    return connected
