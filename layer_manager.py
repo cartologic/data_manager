@@ -117,14 +117,11 @@ class GpkgLayer(object):
             options.append('SCHEMA={}'.format(get_store_schema()))
         name = self.name if not name else name
         geom_schema = self.geometry_fields_schema()
-        if dest_source:
-            if not overwrite and dest_source.GetLayerByName(name):
-                name = self.get_new_name()
-            if len(geom_schema) > 0:
-                options.append('GEOMETRY_NAME={}'.format(geom_schema[0][0]))
-            dest_source.CopyLayer(self.gpkg_layer, name, options)
-        else:
-            raise SourceException("Can't open the source")
+        if not overwrite and dest_source.GetLayerByName(name):
+            name = self.get_new_name()
+        if len(geom_schema) > 0:
+            options.append('GEOMETRY_NAME={}'.format(geom_schema[0][0]))
+        dest_source.CopyLayer(self.gpkg_layer, name, options)
         return name
 
     def prj_file(self, dest_path):
