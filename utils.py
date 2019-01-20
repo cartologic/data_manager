@@ -11,6 +11,7 @@ from slugify import Slugify
 from cartoview.app_manager.helpers import create_direcotry
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
+from geonode.upload.utils import create_geoserver_db_featurestore
 
 from .constants import _temp_dir
 
@@ -47,6 +48,15 @@ def get_store_schema(storename=None):
         storename = ogc_server_settings.datastore_db.get('NAME')
     store = get_store(gs_catalog, storename, settings.DEFAULT_WORKSPACE)
     return store.connection_parameters.get('schema', 'public')
+
+
+def create_datastore(store_name=None, store_type=None):
+    if not store_name:
+        store_name = ogc_server_settings.datastore_db['NAME']
+    create_geoserver_db_featurestore(
+        store_type=store_type,
+        store_name=store_name
+    )
 
 
 def _psycopg2(conn_str):
