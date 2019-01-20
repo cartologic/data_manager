@@ -51,7 +51,8 @@ class StyleManager(object):
     def db_session(self, row_factory=True):
         conn = sqlite3.connect(self.db_path)
         if row_factory:
-            conn.row_factory = lambda c, r: dict([(col[0], r[idx]) for idx, col in enumerate(c.description)])
+            conn.row_factory = lambda c, r: dict(
+                [(col[0], r[idx]) for idx, col in enumerate(c.description)])
         yield conn
         conn.close()
 
@@ -156,7 +157,10 @@ class StyleManager(object):
                 'SELECT * FROM {} WHERE f_table_name=?'.format(
                     self.styles_table_name), (layername, ))
             rows = cursor.fetchone()
-            return self.from_row(rows) if len(rows) > 0 else None
+            if rows and len(rows):
+                return self.from_row(rows)
+            else:
+                return None
 
     def convert_sld_attributes(self, sld_body):
         contents = BytesIO(str(sld_body))
