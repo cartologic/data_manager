@@ -191,3 +191,19 @@ def get_connection():
     port = db_settings.get('PORT', 5432)
     return DataManager.build_connection_string(host, db_name, user, password,
                                                int(port) if port else 5432)
+
+
+def get_store_connection(storename, workspace=None):
+    from geonode.geoserver.helpers import (get_store, gs_catalog)
+    from django.conf import settings
+    if not workspace:
+        workspace = settings.DEFAULT_WORKSPACE
+    store = get_store(gs_catalog, storename, workspace)
+    db = ogc_server_settings.datastore_db
+    db_name = store.connection_parameters.get('database')
+    user = db['USER']
+    password = db['PASSWORD']
+    host = store.connection_parameters['host']
+    port = store.connection_parameters['port']
+    return DataManager.build_connection_string(host, db_name, user, password,
+                                               int(port) if port else 5432)
