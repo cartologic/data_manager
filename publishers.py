@@ -11,16 +11,18 @@ import lxml
 import requests
 from django.conf import settings
 from django.utils.translation import ugettext as _
+from geoserver.catalog import FailedRequestError
+from requests.auth import HTTPBasicAuth
+
 from geonode.geoserver.helpers import (cascading_delete, get_store, gs_catalog,
                                        ogc_server_settings,
                                        set_attributes_from_geoserver)
 from geonode.layers.models import Layer
 from geonode.people.models import Profile
 from geonode.security.views import _perms_info_json
-from requests.auth import HTTPBasicAuth
 
 from .helpers import urljoin
-from .utils import SLUGIFIER
+from .utils import SLUGIFIER, create_datastore
 
 try:
     from celery.utils.log import get_task_logger as get_logger
@@ -168,7 +170,11 @@ class GeonodePublisher(object):
                  storename=ogc_server_settings.datastore_db['NAME'],
                  workspace=DEFAULT_WORKSPACE,
                  owner=Profile.objects.filter(is_superuser=True).first()):
-        self.store = get_store(gs_catalog, storename, workspace)
+        try:
+            self.store = get_store(gs_catalog, storename, workspace)
+        except FailedRequestError as e:
+            logger.warning(e.message)
+            self.store = create_datastore(store_name=storename)
         self.storename = storename
         self.workspace = workspace
         self.owner = owner

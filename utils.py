@@ -53,7 +53,7 @@ def get_store_schema(storename=None):
 def create_datastore(store_name=None, store_type=None):
     if not store_name:
         store_name = ogc_server_settings.datastore_db['NAME']
-    create_geoserver_db_featurestore(
+    return create_geoserver_db_featurestore(
         store_type=store_type,
         store_name=store_name
     )
