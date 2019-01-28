@@ -33,7 +33,8 @@ from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
 from .tasks import esri_from_url
-from .utils import SLUGIFIER, _django_connection, _psycopg2, get_sld_body
+from .utils import (SLUGIFIER, _django_connection,
+                    _psycopg2, get_sld_body, get_geom_attr)
 
 logger = get_logger(__name__)
 
@@ -292,7 +293,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                         http.HttpApplicationError)
                 for layername in layer_names:
                     expected = Layer.objects.filter(
-                        alternate__contains=layername)
+                        alternate__contains=layername, remote_service=None)
                     if expected.count() == 0:
                         return self.get_err_response(
                             request,
@@ -301,9 +302,15 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                     layer_style = expected.first().default_style
                     sld_url = layer_style.sld_url
                     style_name = str(layer_style.name)
-                    gattr = str(
-                        expected.first().attribute_set.filter(
-                            attribute_type__contains='gml').first().attribute)
+                    attributes_qs = expected.first().attribute_set
+                    geom_query = attributes_qs.filter(
+                        attribute_type__contains='gml').first()
+                    if geom_query:
+                        gattr = str(geom_query.attribute)
+                    else:
+                        gattr = get_geom_attr(layername)
+                        if not gattr:
+                            continue
                     layer_styles.append((layername, gattr, style_name,
                                          get_sld_body(sld_url)))
                 file_name = str(request.GET.get('file_name', "download.gpkg"))

@@ -12,7 +12,6 @@ import requests
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from geoserver.catalog import FailedRequestError
-from requests.auth import HTTPBasicAuth
 
 from geonode.geoserver.helpers import (cascading_delete, get_store, gs_catalog,
                                        ogc_server_settings,
@@ -22,7 +21,7 @@ from geonode.people.models import Profile
 from geonode.security.views import _perms_info_json
 
 from .helpers import urljoin
-from .utils import SLUGIFIER, create_datastore
+from .utils import SLUGIFIER, create_datastore, requests_retry_session
 
 try:
     from celery.utils.log import get_task_logger as get_logger
@@ -65,10 +64,12 @@ class GeoserverPublisher(object):
         return urljoin(self.gwc_url, "layers", layername)
 
     def publish_postgis_layer(self, tablename, layername):
-        req = requests.post(
+        s = requests.Session()
+        s.auth = (self.username, self.password)
+        s.headers = {'Content-Type': "application/json"}
+        s = requests_retry_session(session=s)
+        req = s.post(
             self.featureTypes_url,
-            headers={'Content-Type': "application/json"},
-            auth=HTTPBasicAuth(self.username, self.password),
             json={"featureType": {
                 "name": layername,
                 "nativeName": tablename
@@ -90,11 +91,13 @@ class GeoserverPublisher(object):
     def upload_file(self, file, rel_path=ICON_REL_PATH):
         url = urljoin(self.base_url, "rest/", "resource", rel_path,
                       os.path.basename(file.name))
-        req = requests.put(
+        s = requests.Session()
+        s.auth = (self.username, self.password)
+        s.headers = {'Content-Type': 'application/octet-stream'}
+        s = requests_retry_session(session=s)
+        req = s.put(
             url,
-            data=file.read(),
-            headers={'Content-Type': 'application/octet-stream'},
-            auth=HTTPBasicAuth(self.username, self.password))
+            data=file.read(),)
         message = "URL:{} STATUS:".format(url, req.status_code)
         logger.error(message)
         if req.status_code == 201:

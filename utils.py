@@ -5,7 +5,9 @@ from uuid import uuid4
 
 import requests
 from django.conf import settings
+from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
+from requests.packages.urllib3.util.retry import Retry
 from slugify import Slugify
 
 from cartoview.app_manager.helpers import create_direcotry
@@ -85,3 +87,55 @@ def _django_connection():
     except BaseException:
         connected = False
     return connected
+
+
+def requests_retry_session(retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
+
+
+def describe_feature_type(typename):
+    username = ogc_server_settings.credentials[0]
+    password = ogc_server_settings.credentials[1]
+    geoserver_url = ogc_server_settings.LOCATION
+    s = requests.Session()
+    s.auth = (username, password)
+    params = {
+        'service': 'wfs',
+        'version': '1.1.0',
+        'request': 'DescribeFeatureType',
+        'typeNames': typename,
+        'outputFormat': 'application/json'
+    }
+    from .helpers import urljoin
+    s = requests_retry_session(session=s)
+    response = s.get(urljoin(geoserver_url, 'wfs'), params=params)
+    return response
+
+
+def get_geom_attr(typename):
+    response = describe_feature_type(typename)
+    if response.status_code != 200:
+        return None
+    data = response.json()
+    feature_type = data.get('featureTypes')[0]
+    properties = feature_type.get('properties')
+
+    def is_geom_attr(attr):
+        if 'gml:' in attr.get('type', ''):
+            return True
+        return False
+    geom_attrs = filter(is_geom_attr, properties)
+    if len(geom_attrs) == 0:
+        return None
+    return str(geom_attrs[0].get('name'))
