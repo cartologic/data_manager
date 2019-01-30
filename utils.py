@@ -38,8 +38,7 @@ def get_sld_body(url):
     return req.text
 
 
-def get_gs_store(storename=None,
-                 workspace=DEFAULT_WORKSPACE):
+def get_gs_store(storename=None, workspace=DEFAULT_WORKSPACE):
     if not storename:
         storename = ogc_server_settings.datastore_db.get('NAME', None)
     return get_store(gs_catalog, storename, workspace)
@@ -56,9 +55,7 @@ def create_datastore(store_name=None, store_type=None):
     if not store_name:
         store_name = ogc_server_settings.datastore_db['NAME']
     return create_geoserver_db_featurestore(
-        store_type=store_type,
-        store_name=store_name
-    )
+        store_type=store_type, store_name=store_name)
 
 
 def _psycopg2(conn_str):
@@ -89,7 +86,10 @@ def _django_connection():
     return connected
 
 
-def requests_retry_session(retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None):
+def requests_retry_session(retries=3,
+                           backoff_factor=0.3,
+                           status_forcelist=(500, 502, 504),
+                           session=None):
     session = session or requests.Session()
     retry = Retry(
         total=retries,
@@ -97,7 +97,7 @@ def requests_retry_session(retries=3, backoff_factor=0.3, status_forcelist=(500,
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
-    )
+        method_whitelist=frozenset(['GET', 'POST', 'PUT', 'DELETE', 'HEAD']))
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
@@ -135,6 +135,7 @@ def get_geom_attr(typename):
         if 'gml:' in attr.get('type', ''):
             return True
         return False
+
     geom_attrs = filter(is_geom_attr, properties)
     if len(geom_attrs) == 0:
         return None
