@@ -112,7 +112,8 @@ class UploadView(View):
         uploads = get_objects_for_user(user, 'data_manager.view_package')
         permitted = get_objects_for_user(request.user,
                                          'base.download_resourcebase')
-        permitted_layers = Layer.objects.filter(id__in=permitted)
+        permitted_layers = Layer.objects.filter(
+            id__in=permitted, remote_service=None)
         return render(
             request,
             "data_manager/upload.html",
