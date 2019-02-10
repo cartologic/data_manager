@@ -200,10 +200,15 @@ def get_store_connection(storename, workspace=None):
         workspace = settings.DEFAULT_WORKSPACE
     store = get_store(gs_catalog, storename, workspace)
     db = ogc_server_settings.datastore_db
-    db_name = store.connection_parameters.get('database')
+    try:
+        db_name = store.connection_parameters.get('database')
+        host = store.connection_parameters['host']
+        port = store.connection_parameters['port']
+    except KeyError:
+        db_name = db['NAME']
+        host = db['HOST']
+        port = db['PORT']
     user = db['USER']
     password = db['PASSWORD']
-    host = store.connection_parameters['host']
-    port = store.connection_parameters['port']
     return DataManager.build_connection_string(host, db_name, user, password,
                                                int(port) if port else 5432)
