@@ -6,8 +6,8 @@
     <title>Data Manager</title>
     <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1, user-scalable=no" />
     <link rel="shortcut icon" type="image/png" href="{{ STATIC_URL }}cartoview/img/icon.png" />
-    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}?version=0.9.7">
-    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}?version=0.9.7">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/GeopackageManager.css' %}?version=0.9.8">
+    <link rel="stylesheet" href="{% static 'data_manager/dist/vendors-GeopackageManager.css' %}?version=0.9.8">
     <style>
         html,body {
             height: 100%;
@@ -20,8 +20,8 @@
 </head>
 <body>
 <div style="height: 100%;" id="react-app"></div>
-<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=0.9.7"></script>
-  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=0.9.7"></script>
+<script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=0.9.8"></script>
+  <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=0.9.8"></script>
   <script>
     const urls={
       uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='data_manager' %}",
