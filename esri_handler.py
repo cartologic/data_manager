@@ -2,7 +2,7 @@
 try:
     import ogr
     import osr
-except:
+except BaseException:
     from osgeo import ogr, osr
 import json
 import os
