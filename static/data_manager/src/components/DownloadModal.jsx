@@ -1,16 +1,20 @@
 import 'react-select/dist/react-select.css'
 
 import { ApiRequests } from '../utils/utils'
+import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button'
 import CircularProgress from '@material-ui/core/CircularProgress'
+import CloseIcon from '@material-ui/icons/Close';
 import Dialog from '@material-ui/core/Dialog'
 import DialogActions from '@material-ui/core/DialogActions'
 import DialogContent from '@material-ui/core/DialogContent'
 import DialogContentText from '@material-ui/core/DialogContentText'
 import DialogTitle from '@material-ui/core/DialogTitle'
+import IconButton from '@material-ui/core/IconButton';
 import PropTypes from 'prop-types'
 import React from 'react'
 import Select from 'react-select'
+import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography'
 import classNames from 'classnames'
 import { connect } from 'react-redux'
@@ -91,7 +95,19 @@ class DownloadModal extends React.Component {
                 onClose={handleDownloadModal}
                 aria-labelledby="form-dialog-title"
             >
-                <DialogTitle disableTypography={true} className={classes.dialogTitle}> <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">{"Download Layers"}</Typography></DialogTitle>
+                <AppBar className={classes.appBar}>
+                    <Toolbar>
+                        <IconButton edge="start" color="inherit" onClick={handleDownloadModal} aria-label="Close">
+                            <CloseIcon />
+                        </IconButton>
+                        <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">
+                            {"Download Layers"}
+                        </Typography>
+                    </Toolbar>
+                </AppBar>
+                {/* <DialogTitle disableTypography={true} className={classes.dialogTitle}>
+
+                </DialogTitle> */}
                 <DialogContent>
                     <DialogContentText>
                         {downloadError && <Typography className={classes.flexGrow} noWrap color="secondary" variant="subheading">{downloadError}</Typography>}
