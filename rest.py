@@ -33,8 +33,8 @@ from .models import GpkgUpload, ManagerDownload
 from .publishers import GeonodePublisher, GeoserverPublisher
 from .style_manager import StyleManager
 from .tasks import esri_from_url
-from .utils import (SLUGIFIER, _django_connection,
-                    _psycopg2, get_sld_body, get_geom_attr)
+from .utils import (SLUGIFIER, _django_connection, _psycopg2, get_geom_attr,
+                    get_sld_body)
 
 logger = get_logger(__name__)
 

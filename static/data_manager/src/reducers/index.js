@@ -14,7 +14,6 @@ import {
 } from './uploads'
 
 import { combineReducers } from 'redux'
-
 export default combineReducers( {
     uploads,
     uploadsLoading,
@@ -23,5 +22,5 @@ export default combineReducers( {
     uploadsTotalCount,
     urls,
     username,
-    token,
+    authToken: token,
 } )

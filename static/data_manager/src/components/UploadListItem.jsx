@@ -74,9 +74,8 @@ const CustomTableCell = withStyles(theme => ({
 class UploadListItem extends React.Component {
     constructor(props) {
         super(props)
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     handleDeleted = (upload) => {
         const { urls, deleteOldUpload } = this.props
@@ -154,7 +153,7 @@ UploadListItem.propTypes = {
     setCurrentLayerOpenUpdateModal: PropTypes.func.isRequired,
     upload: PropTypes.object.isRequired,
     permissions: PropTypes.object.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
     permissionsLoading: PropTypes.bool.isRequired,
@@ -162,7 +161,7 @@ UploadListItem.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls,
         permissions: state.permissions,
         permissionsLoading: state.permissionsLoading

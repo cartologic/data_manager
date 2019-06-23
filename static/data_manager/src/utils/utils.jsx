@@ -22,13 +22,28 @@ export class ApiRequests {
         this.token = token
         this.username = username
     }
+    getBaseHeaders() {
+        let headers = {}
+        if (this.token.type === "oauth") {
+            headers = {
+                ...headers,
+                'Authorization': `${this.token.prefix} ${this.token.token}`,
+            }
+        } else if (this.token.type === "tastypie") {
+            headers = {
+                ...headers,
+                'Authorization': `ApiKey ${this.username}:${this.token.token}`,
+            }
+        }
+        return headers
+    }
     doPost(url, data, extraHeaders = {}) {
         return fetch(url, {
             method: 'POST',
             redirect: 'follow',
             credentials: 'include',
             headers: new Headers({
-                'Authorization': `ApiKey ${this.username}:${this.token}`,
+                ...this.getBaseHeaders(),
                 ...extraHeaders
             }),
             body: data
@@ -40,7 +55,7 @@ export class ApiRequests {
             redirect: 'follow',
             credentials: 'include',
             headers: {
-                'Authorization': `ApiKey ${this.username}:${this.token}`,
+                ...this.getBaseHeaders(),
                 ...extraHeaders
             }
         }).then((response) => response.text())
@@ -51,7 +66,7 @@ export class ApiRequests {
             redirect: 'follow',
             credentials: 'include',
             headers: {
-                'Authorization': `ApiKey ${this.username}:${this.token}`,
+                ...this.getBaseHeaders(),
                 ...extraHeaders
             }
         }).then((response) => response.json())
@@ -75,7 +90,14 @@ export class ApiRequests {
         }
         xhr.open('POST', url, true)
         xhr.setRequestHeader("Cache-Control", "no-cache")
-        xhr.setRequestHeader('Authorization', `ApiKey ${this.username}:${this.token}`)
+        let headers = this.getBaseHeaders()
+        let headerKeys = Object.keys(headers)
+        for (let index = 0; index < headerKeys.length; index++) {
+            const headerKey = headerKeys[index];
+            const headerValue = headers[headerKey];
+            xhr.setRequestHeader(headerKey, headerValue)
+        }
+
         xhr.send(data)
 
     }

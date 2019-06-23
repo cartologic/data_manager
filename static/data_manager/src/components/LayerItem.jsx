@@ -58,9 +58,8 @@ class LayerItem extends React.Component {
             replaceLayerLoading: false,
             expand: false
         }
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     loadSchema = () => {
         const { urls, layer, currentLayer } = this.props
@@ -177,7 +176,7 @@ class LayerItem extends React.Component {
 }
 LayerItem.propTypes = {
     classes: PropTypes.object.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
     layer: PropTypes.object.isRequired,
@@ -186,7 +185,7 @@ LayerItem.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls
     }
 }

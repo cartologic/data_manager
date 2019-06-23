@@ -45,6 +45,7 @@ class GeopackageAppBar extends React.Component {
                         <Typography variant="title" color="inherit" className={classes.flex}>
                             {title}
                         </Typography>
+                        <Button classes={{ label: classes.capitalize }} onClick={() => window.location.href = '/'} color="inherit">{"Home"}</Button>
                         <Tooltip title="Import GeoPackage, Shapefile, CSV, Raster or KML">
                             <Button classes={{ label: classes.capitalize }} onClick={() => window.location.href = urls.layerUpload} color="inherit">{"Upload Shapefile"}</Button>
                         </Tooltip>

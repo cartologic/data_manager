@@ -66,9 +66,8 @@ class UploadsList extends React.Component {
             updateExistingLoading: false,
             updateExistingModalOpen: false,
         }
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     setCurrentLayerOpenPublishModal = (layer) => {
         this.setState({ currentLayer: layer, publishName: layer.expected_name }, this.handlPublishModal)
@@ -126,14 +125,14 @@ class UploadsList extends React.Component {
 UploadsList.propTypes = {
     classes: PropTypes.object.isRequired,
     uploads: PropTypes.array.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
 }
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls,
         uploads: state.uploads,
     }

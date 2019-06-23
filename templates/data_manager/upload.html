@@ -44,7 +44,26 @@
     var props={
       urls:urls,
       username:"{{request.user.username}}",
-      token:"{{request.user.api_key}}",
+      authToken:{
+            type:"tastypie",
+            prefix:"ApiKey",
+            token:"{{request.user.api_key}}".split(" for ")[0]
+        },
+      {% comment %}
+      {% if 'access_token' in request.session %}
+        authToken:{
+          type:"oauth",
+          prefix:"Bearer",
+          token:"{{request.session.access_token}}"
+        },
+      {% else %}
+        authToken:{
+            type:"tastypie",
+            prefix:"ApiKey",
+            token:"{{request.user.api_key}}".split(" for ")[0]
+        },
+      {% endif %}
+      {% endcomment %}
     }
     GeopackageManagerRenderer.show("react-app",props)
   </script>

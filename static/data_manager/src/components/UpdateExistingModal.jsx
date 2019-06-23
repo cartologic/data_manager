@@ -59,9 +59,8 @@ class UpdateExistingModal extends React.Component {
             layers: [],
             layersLoading: false
         }
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     handleLayerTitleChange = event => {
         this.setState({ layerTitle: event.target.value })
@@ -133,7 +132,7 @@ class UpdateExistingModal extends React.Component {
 UpdateExistingModal.propTypes = {
     classes: PropTypes.object.isRequired,
     currentLayer: PropTypes.object,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
     handleUpdateExistingModal: PropTypes.func.isRequired,
@@ -144,7 +143,7 @@ UpdateExistingModal.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls
     }
 }

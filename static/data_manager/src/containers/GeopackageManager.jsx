@@ -70,12 +70,12 @@ const styles = theme => ({
 class GeopackageManager extends Component {
     constructor(props) {
         super(props)
-        const { token, username, urls } = this.props
+        const { authToken, username, urls } = this.props
         this.state = {
             files: [],
         }
-        this.geopackageApi = new GeopackageApi(username, token, urls)
-        this.requests = new ApiRequests(username, this.token)
+        this.geopackageApi = new GeopackageApi(username, authToken, urls)
+        this.requests = new ApiRequests(username, authToken)
     }
     onDrop = (files) => {
         this.setState({
@@ -137,7 +137,7 @@ GeopackageManager.propTypes = {
     classes: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     setUploads: PropTypes.func.isRequired,
     uploads: PropTypes.array.isRequired,
     uploadsLoading: PropTypes.bool.isRequired,
@@ -149,7 +149,7 @@ GeopackageManager.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls,
         uploads: state.uploads,
         uploadsLoading: state.uploadsLoading,

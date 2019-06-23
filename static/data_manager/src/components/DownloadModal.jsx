@@ -55,9 +55,8 @@ class DownloadModal extends React.Component {
             downloadError: null,
             downloadLoading: false
         }
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     downloadSelectedLayers = () => {
         const { urls } = this.props
@@ -124,7 +123,7 @@ class DownloadModal extends React.Component {
 }
 DownloadModal.propTypes = {
     classes: PropTypes.object.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
     handleDownloadModal: PropTypes.func.isRequired,
@@ -133,7 +132,7 @@ DownloadModal.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls
     }
 }

@@ -17,10 +17,9 @@ const styles = theme => ({
 class UploadItem extends Component {
     constructor(props) {
         super(props)
-        const { username, token } = this.props
+        const { username, authToken } = this.props
         this.state = { progress: 0, error: null }
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        this.requests = new ApiRequests(username, authToken)
     }
     componentDidMount() {
         const { urls, file, addUpload, updatePermissions, permissions, removeUploadedFile } = this.props
@@ -64,7 +63,7 @@ UploadItem.propTypes = {
     file: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     addUpload: PropTypes.func.isRequired,
     updatePermissions: PropTypes.func.isRequired,
     permissions: PropTypes.object.isRequired,
@@ -73,7 +72,7 @@ UploadItem.propTypes = {
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls,
         permissions: state.permissions,
     }

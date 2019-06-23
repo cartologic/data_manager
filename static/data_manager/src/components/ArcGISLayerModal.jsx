@@ -31,9 +31,8 @@ class ArcGISModal extends React.Component {
             layerURL: '',
             loading: false
         }
-        const { token, username } = this.props
-        let newToken = token.split(" for ")[0]
-        this.requests = new ApiRequests(username, newToken)
+        const { authToken, username } = this.props
+        this.requests = new ApiRequests(username, authToken)
     }
     handleLayerURLChange = (event) => {
         this.setState({ layerURL: event.target.value })
@@ -103,14 +102,14 @@ ArcGISModal.propTypes = {
     classes: PropTypes.object.isRequired,
     handleArcGISModal: PropTypes.func.isRequired,
     ArcGISModalOpen: PropTypes.bool.isRequired,
-    token: PropTypes.string.isRequired,
+    authToken: PropTypes.object.isRequired,
     urls: PropTypes.object.isRequired,
     username: PropTypes.string.isRequired,
 }
 const mapStateToProps = (state) => {
     return {
         username: state.username,
-        token: state.token,
+        authToken: state.authToken,
         urls: state.urls
     }
 }
