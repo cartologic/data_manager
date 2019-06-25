@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import FieldError
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,13 +12,14 @@ from django.utils import formats
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 from django.views.generic import View
-from geonode.layers.models import Layer
-from geonode.layers.views import _resolve_layer
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_objects_for_user, get_perms
 
 from cartoview.app_manager.helpers import create_direcotry
 from cartoview.log_handler import get_logger
+from geonode.layers.models import Layer
+from geonode.layers.views import _resolve_layer
+
 from .decorators import time_it
 from .exceptions import GpkgLayerException
 from .forms import GpkgUploadForm
@@ -112,8 +114,11 @@ class UploadView(View):
         uploads = get_objects_for_user(user, 'data_manager.view_package')
         permitted = get_objects_for_user(request.user,
                                          'base.download_resourcebase')
-        permitted_layers = Layer.objects.filter(
-            id__in=permitted, remote_service=None)
+        try:
+            permitted_layers = Layer.objects.filter(
+                id__in=permitted, remote_service=None)
+        except FieldError:
+            permitted_layers = Layer.objects.filter(id__in=permitted)
         return render(
             request,
             "data_manager/upload.html",
