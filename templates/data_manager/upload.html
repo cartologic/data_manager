@@ -31,13 +31,13 @@
       esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='data_manager' %}",
       layerUpload:"{% url 'layer_upload' %}",
       publishURL:function(upload_id,layername){
-        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/publish/"
+        return urls.uploadsURL+upload_id+"/"+layername+"/publish/"
       },
       compareLayerURL:function(upload_id,layername,glayername){
-        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/compare/"
+        return urls.uploadsURL+upload_id+"/"+layername+"/"+glayername+"/compare/"
       },
       reloadURL:function(upload_id,layername,glayername){
-        return "{% url 'app_manager_base_url'%}data_manager/api/gpkg_api/data_manager/"+upload_id+"/"+layername+"/"+glayername+"/reload/"
+        return urls.uploadsURL+upload_id+"/"+layername+"/"+glayername+"/reload/"
       }
     }
     var downloadableLayers={{download_layers|dump_json}}
