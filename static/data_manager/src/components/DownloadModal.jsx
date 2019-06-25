@@ -95,20 +95,19 @@ class DownloadModal extends React.Component {
                 onClose={handleDownloadModal}
                 aria-labelledby="form-dialog-title"
             >
-                <AppBar className={classes.appBar}>
-                    <Toolbar>
-                        <IconButton edge="start" color="inherit" onClick={handleDownloadModal} aria-label="Close">
-                            <CloseIcon />
-                        </IconButton>
-                        <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">
-                            {"Download Layers"}
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
-                {/* <DialogTitle disableTypography={true} className={classes.dialogTitle}>
-
-                </DialogTitle> */}
-                <DialogContent>
+                <DialogTitle disableTypography={true} className={classes.dialogTitle}>
+                    <AppBar className={classes.appBar}>
+                        <Toolbar>
+                            <IconButton edge="start" color="inherit" onClick={handleDownloadModal} aria-label="Close">
+                                <CloseIcon />
+                            </IconButton>
+                            <Typography className={classNames(classes.flexGrow, classes.whiteText)} noWrap variant="title">
+                                {"Download Layers"}
+                            </Typography>
+                        </Toolbar>
+                    </AppBar>
+                </DialogTitle>
+                <DialogContent className="base-margin">
                     <DialogContentText>
                         {downloadError && <Typography className={classes.flexGrow} noWrap color="secondary" variant="subheading">{downloadError}</Typography>}
                     </DialogContentText>
