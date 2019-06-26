@@ -23,24 +23,13 @@
 <script src="{% static 'data_manager/dist/vendors-GeopackageManager-chunk.js' %}?version=0.9.8"></script>
   <script src="{% static 'data_manager/dist/GeopackageManager.bundle.js' %}?version=0.9.8"></script>
   <script>
-    var getAbsoluteUrl = (function() {
-      var a;
-
-      return function(url) {
-        if(!a) a = document.createElement('a');
-        a.href = url;
-
-        return a.href;
-      };
-    })();
-    const baseURL=getAbsoluteUrl('../..').replace(/\/$/, "");
     const urls={
-      uploadsURL:baseURL+"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='data_manager' %}",
-      layersURL:baseURL+"{% url 'api_dispatch_list'  api_name='api' resource_name='layers' %}",
-      downloadURL:baseURL+"{% url 'api_download_request'  api_name='gpkg_api' resource_name='data_manager' %}",
-      permissionsURL:baseURL+"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='data_manager' %}",
-      esriPublishURL:baseURL+"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='data_manager' %}",
-      layerUpload:baseURL+"{% url 'layer_upload' %}",
+      uploadsURL:"{% url 'api_dispatch_list'  api_name='gpkg_api' resource_name='data_manager' %}",
+      layersURL:"{% url 'api_dispatch_list'  api_name='api' resource_name='layers' %}",
+      downloadURL:"{% url 'api_download_request'  api_name='gpkg_api' resource_name='data_manager' %}",
+      permissionsURL:"{% url 'api_get_permissions'  api_name='gpkg_api' resource_name='data_manager' %}",
+      esriPublishURL:"{% url 'api_esri_dump'  api_name='gpkg_api' resource_name='data_manager' %}",
+      layerUpload:"{% url 'layer_upload' %}",
       publishURL:function(upload_id,layername){
         return urls.uploadsURL+upload_id+"/"+layername+"/publish/"
       },
