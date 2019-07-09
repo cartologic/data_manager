@@ -2,6 +2,7 @@
 import mimetypes
 import os
 from distutils.util import strtobool
+from wsgiref.util import FileWrapper
 
 from celery.result import AsyncResult
 from django.conf.urls import url
@@ -643,16 +644,18 @@ class ManagerDownloadResource(BaseManagerResource):
         self.is_authenticated(request)
         self.throttle_check(request)
         try:
+            chunk_size = 8192
             obj = ManagerDownload.objects.get(id=pk)
             if obj.expired:
                 raise Exception("Expired Download, Please Request a new one")
             if obj.file_path:
                 f = open(obj.file_path, "rb")
                 response = StreamingHttpResponse(
-                    read_in_chunks(f),
+                    FileWrapper(f, chunk_size),
                     content_type=mimetypes.guess_type(f.name)[0])
                 response['Content-Disposition'] = 'attachment;filename=%s' % (
                     os.path.basename(obj.file_path))
+                response['Content-Length'] = os.path.getsize(obj.file_path)
                 return response
 
         except Exception as e:

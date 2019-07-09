@@ -318,6 +318,7 @@ def download_layers(request):
     permitted_layers = [
         layer for layer in permitted_layers if layer.alternate in layernames
     ]
+    print(permitted_layers)
     with DataManager.open_source(get_connection(), is_postgres=True) as ds:
         if not ds:
             return HttpResponseForbidden("Cannot connect to database")
