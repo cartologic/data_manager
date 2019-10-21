@@ -69,7 +69,7 @@ class UpdateExistingModal extends React.Component {
 
         const { layerTitle } = this.state
         const { urls } = this.props
-        const url = `${urls.layersURL}?title__icontains=${layerTitle}&permission=base.change_resourcebase`
+        const url = `${urls.layersURL}?title__icontains=${layerTitle}&permission=change_resourcebase`
         this.setState({ layersLoading: true }, () => {
             this.requests.doGet(url).then(result => {
                 this.setState({ layers: result.objects, layersLoading: false })
