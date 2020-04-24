@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import functools
 import os
 import time
 from uuid import uuid4
@@ -142,3 +143,22 @@ def get_geom_attr(typename):
     if len(geom_attrs) == 0:
         return None
     return str(geom_attrs[0].get('name'))
+
+
+def repeat_every(repeats=5, every=2):
+    """
+    decorator evaluates function after maximum number of repeats every number of seconds
+    """
+
+    def repeat_wrapper(func):
+        @functools.wraps(func)
+        def func_wrapper(*args, **kwargs):
+            for _ in range(repeats):
+                value = func(*args, **kwargs)
+                if value:
+                    return value
+                time.sleep(every)
+
+        return func_wrapper
+
+    return repeat_wrapper
