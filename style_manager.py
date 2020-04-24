@@ -5,11 +5,12 @@ from io import BytesIO
 
 import lxml
 from django.conf import settings
+
 from geonode.geoserver.helpers import gs_catalog
 from geonode.layers.models import Style
 
 from .helpers import unicode_converter
-from .utils import SLUGIFIER
+from .utils import SLUGIFIER, repeat_every
 
 try:
     import _sqlite3 as sqlite3
@@ -64,8 +65,8 @@ class StyleManager(object):
             overwrite=overwrite,
             raw=True,
             workspace=settings.DEFAULT_WORKSPACE)
-        style = gs_catalog.get_style(
-            name, workspace=settings.DEFAULT_WORKSPACE)
+        style_func = repeat_every()(gs_catalog.get_style)
+        style = style_func(name, settings.DEFAULT_WORKSPACE)
         style_url = style.body_href
         gstyle, created = Style.objects.get_or_create(
             name=name,
