@@ -300,20 +300,22 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                             request,
                             "No Layer with this name {}".format(layername),
                             http.HttpApplicationError)
-                    layer_style = expected.first().default_style
-                    sld_url = layer_style.sld_url
-                    style_name = str(layer_style.name)
-                    attributes_qs = expected.first().attribute_set
-                    geom_query = attributes_qs.filter(
-                        attribute_type__contains='gml').first()
-                    if geom_query:
-                        gattr = str(geom_query.attribute)
-                    else:
-                        gattr = get_geom_attr(layername)
-                        if not gattr:
-                            continue
-                    layer_styles.append((layername, gattr, style_name,
-                                         get_sld_body(sld_url)))
+                    layer = expected.first()
+                    layer_style = layer.default_style
+                    if layer_style:
+                        sld_url = layer_style.sld_url
+                        style_name = str(layer_style.name)
+                        attributes_qs = expected.first().attribute_set
+                        geom_query = attributes_qs.filter(
+                            attribute_type__contains='gml').first()
+                        if geom_query:
+                            gattr = str(geom_query.attribute)
+                        else:
+                            gattr = get_geom_attr(layername)
+                            if not gattr:
+                                continue
+                        layer_styles.append((layername, gattr, style_name,
+                                            get_sld_body(sld_url)))
                 file_name = str(request.GET.get('file_name', "download.gpkg"))
                 download_dir = GpkgLayer._get_new_dir(base_dir=_downloads_dir)
                 file_path = os.path.join(download_dir, file_name)
