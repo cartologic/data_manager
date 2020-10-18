@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import include, url
+from django.urls import include, re_path
 from tastypie.api import Api
 from . import APP_NAME
 from .rest import GpkgUploadResource, ManagerDownloadResource
@@ -11,26 +11,26 @@ api = Api(api_name='gpkg_api')
 api.register(GpkgUploadResource())
 api.register(ManagerDownloadResource())
 urlpatterns = [
-    url(r'^upload/', UploadView.as_view(), name="geopackage_upload"),
-    url(r'^$', UploadView.as_view(), name="%s.index" % (APP_NAME)),
-    url(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)$',
+    re_path(r'^upload/', UploadView.as_view(), name="geopackage_upload"),
+    re_path(r'^$', UploadView.as_view(), name="%s.index" % (APP_NAME)),
+    re_path(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)$',
         publish_layer,
         name="geopackage_publish"),
-    url(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<publish_name>[^/]*)$',
+    re_path(r'^publish/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<publish_name>[^/]*)$',
         publish_layer,
         name="geopackage_publish_name"),
-    url(r'^compare_schema/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)$',
+    re_path(r'^compare_schema/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)$',
         compare_to_geonode_layer,
         name="compare_schema"),
-    url(r'^reload_layer/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)$',
+    re_path(r'^reload_layer/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)$',
         reload_layer,
         name="reload_layer"),
-    url(r'^compatible_layers/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/$',
+    re_path(r'^compatible_layers/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/$',
         get_compatible_layers,
         name="compatible_layers"),
-    url(r'^delete/(?P<upload_id>[\d]+)/$',
+    re_path(r'^delete/(?P<upload_id>[\d]+)/$',
         deleteUpload,
         name="geopackage_delete"),
-    url(r'^download$', download_layers, name="geopackage_download"),
-    url(r'^api/', include(api.urls)),
+    re_path(r'^download$', download_layers, name="geopackage_download"),
+    re_path(r'^api/', include(api.urls)),
 ]

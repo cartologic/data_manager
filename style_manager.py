@@ -167,7 +167,7 @@ class StyleManager(object):
         contents = BytesIO(str(sld_body))
         tree = lxml.etree.parse(contents)
         root = tree.getroot()
-        nsmap = {k: v for k, v in root.nsmap.iteritems() if k}
+        nsmap = {k: v for k, v in root.nsmap.items() if k}
         properties = tree.xpath('.//ogc:PropertyName', namespaces=nsmap)
         for prop in properties:
             value = str(prop.text).lower()

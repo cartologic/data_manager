@@ -9,7 +9,7 @@ from django.conf import settings
 from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.util.retry import Retry
-from slugify import slugify
+from django.utils.text import slugify
 
 from cartoview.app_manager.helpers import create_direcotry
 from geonode.geoserver.helpers import (get_store, gs_catalog,
@@ -22,7 +22,7 @@ DEFAULT_WORKSPACE = settings.DEFAULT_WORKSPACE
 
 
 def SLUGIFIER(text):
-    return slugify(text, separator='_')
+    return slugify(text)
 
 
 def get_new_dir(base_dir=_temp_dir):

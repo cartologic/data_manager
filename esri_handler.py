@@ -108,7 +108,7 @@ class EsriHandler(EsriDumper):
             if not name:
                 name = self.get_new_name(es.get_name())
             feature_iter = iter(self)
-            first_feature = feature_iter.next()
+            first_feature = next(feature_iter)
             with DataManager.open_source(get_connection(),
                                          is_postgres=True) as source:
                 options = [
@@ -139,7 +139,7 @@ class EsriHandler(EsriDumper):
                             layer, next_feature, gtype, srs=coord_trans)
                     layer.CommitTransaction()
         except (StopIteration, EsriException, EsriFeatureLayerException,
-                ConnectionError), e:
+                ConnectionError) as e:
             logger.debug(e.message)
             if isinstance(e, EsriFeatureLayerException):
                 logger.info(e.message)

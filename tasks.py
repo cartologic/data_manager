@@ -2,7 +2,7 @@
 from geonode.celery_app import app
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from cartoview.log_handler import get_logger
 

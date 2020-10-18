@@ -5,8 +5,7 @@ from distutils.util import strtobool
 from wsgiref.util import FileWrapper
 
 from celery.result import AsyncResult
-from django.conf.urls import url
-from django.core.urlresolvers import reverse
+from django.urls import re_path, reverse
 from django.db import transaction
 from django.http import StreamingHttpResponse
 from django.utils.decorators import method_decorator
@@ -179,43 +178,43 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
 
     def prepend_urls(self):
         return [
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/publish%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/publish%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('publish'),
                 name="api_geopackage_publish"),
-            url(r"^(?P<resource_name>%s)/permissions%s$" %
+            re_path(r"^(?P<resource_name>%s)/permissions%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('get_permissions'),
                 name="api_get_permissions"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('layer_details'),
                 name="api_layer_details"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/download_request%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/download_request%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('layer_download_request'),
                 name="api_layer_download_request"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/compatible_layers%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/compatible_layers%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('get_compatible_layers'),
                 name="api_compatible_layers"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/reload%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/reload%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('reload_layer'),
                 name="api_reload"),
-            url(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/compare%s$"
+            re_path(r"^(?P<resource_name>%s)/(?P<upload_id>[\d]+)/(?P<layername>[^/]*)/(?P<glayername>[^/]*)/compare%s$"
                 % (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('compare_to_geonode_layer'),
                 name="api_compare"),
-            url(r"^(?P<resource_name>%s)/download_request%s$" %
+            re_path(r"^(?P<resource_name>%s)/download_request%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('download_request'),
                 name="api_download_request"),
-            url(r"^(?P<resource_name>%s)/tasks/state%s$" %
+            re_path(r"^(?P<resource_name>%s)/tasks/state%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('task_state'),
                 name="api_task_state"),
-            url(r"^(?P<resource_name>%s)/esri/dump/layer%s$" %
+            re_path(r"^(?P<resource_name>%s)/esri/dump/layer%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('esri_dump'),
                 name="api_esri_dump"),
@@ -382,7 +381,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                         }))
                 return self.create_response(request, {"download_url": url})
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-                GpkgLayerException), e:
+                GpkgLayerException) as e:
             return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
@@ -403,7 +402,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             return self.create_response(request, gpkg_layer.as_dict(),
                                         http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-                GpkgLayerException), e:
+                GpkgLayerException) as e:
             return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
@@ -437,7 +436,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 request, {"status": "Layer reloaded succesfully"},
                 response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-                GpkgLayerException), e:
+                GpkgLayerException) as e:
             return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
@@ -487,7 +486,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             return self.create_response(
                 request, data, response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-                GpkgLayerException), e:
+                GpkgLayerException) as e:
             return self.get_err_response(request, e.message, http.HttpNotFound)
 
     @ensure_postgis_connection
@@ -512,7 +511,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
             return self.create_response(
                 request, check, response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-                GpkgLayerException), e:
+                GpkgLayerException) as e:
             return self.get_err_response(request, e.message)
 
     @ensure_postgis_connection
@@ -635,7 +634,7 @@ class ManagerDownloadResource(BaseManagerResource):
 
     def prepend_urls(self):
         return [
-            url(r"^(?P<resource_name>%s)/(?P<pk>[\d]+)/download%s$" %
+            re_path(r"^(?P<resource_name>%s)/(?P<pk>[\d]+)/download%s$" %
                 (self._meta.resource_name, trailing_slash()),
                 self.wrap_view('download'),
                 name="api_manager_download"),
