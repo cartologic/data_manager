@@ -37,7 +37,7 @@ def package_path(instance, filename):
 
 
 class GpkgUpload(models.Model):
-    user = models.ForeignKey(Profile, blank=True, null=True)
+    user = models.ForeignKey(Profile, blank=True, null=True, on_delete=models.SET_NULL)
     package = models.FileField(
         upload_to=package_path,
         validators=[validate_file_extension],
@@ -105,7 +105,7 @@ signals.post_save.connect(create_api_key, sender=Profile)
 
 
 class ManagerDownload(models.Model):
-    user = models.ForeignKey(Profile, blank=False, null=False)
+    user = models.ForeignKey(Profile, blank=False, null=False, on_delete=models.CASCADE)
     file_path = models.TextField(null=False, blank=False)
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
