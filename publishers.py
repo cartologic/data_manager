@@ -202,12 +202,10 @@ class GeonodePublisher(object):
                     "store": the_store.name,
                     "storeType": the_store.resource_type,
                     "alternate":
-                    "%s:%s" % (workspace.name.encode('utf-8'),
-                               resource.name.encode('utf-8')),
+                    "%s:%s" % (workspace.name, resource.name),
                     "title": (resource.title or 'No title provided'),
                     "abstract":
-                    (resource.abstract or
-                     unicode(_('No abstract provided')).encode('utf-8')),
+                    (resource.abstract or _('No abstract provided')),
                     "owner": self.owner,
                     "uuid": str(uuid.uuid4()),
                     "bbox_x0": Decimal(resource.native_bbox[0]),
