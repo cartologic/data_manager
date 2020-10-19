@@ -315,7 +315,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                                 continue
                         layer_styles.append((layername, gattr, style_name,
                                             get_sld_body(sld_url)))
-                file_name = str(request.GET.get('file_name', "download.gpkg"))
+                file_name = str(request.GET.get('file_name', "{}.gpkg".format(layername)))
                 download_dir = GpkgLayer._get_new_dir(base_dir=_downloads_dir)
                 file_path = os.path.join(download_dir, file_name)
                 dest_path = DataManager.postgis_as_gpkg(get_connection(),
