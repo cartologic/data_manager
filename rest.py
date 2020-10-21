@@ -341,7 +341,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                         }))
                 return self.create_response(request, {"download_url": url})
         except Exception as e:
-            return self.get_err_response(request, e.message,
+            return self.get_err_response(request, e,
                                          http.HttpApplicationError)
 
     def layer_download_request(self, request, upload_id, layername, **kwargs):
@@ -382,7 +382,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 return self.create_response(request, {"download_url": url})
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException) as e:
-            return self.get_err_response(request, e.message)
+            return self.get_err_response(request, e)
 
     @ensure_postgis_connection
     def layer_details(self, request, upload_id, layername, **kwargs):
@@ -403,7 +403,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                                         http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException) as e:
-            return self.get_err_response(request, e.message)
+            return self.get_err_response(request, e)
 
     @ensure_postgis_connection
     def reload_layer(self, request, upload_id, layername, glayername,
@@ -437,7 +437,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException) as e:
-            return self.get_err_response(request, e.message)
+            return self.get_err_response(request, e)
 
     @ensure_postgis_connection
     def get_compatible_layers(self, request, upload_id, layername, **kwargs):
@@ -487,7 +487,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 request, data, response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException) as e:
-            return self.get_err_response(request, e.message, http.HttpNotFound)
+            return self.get_err_response(request, e, http.HttpNotFound)
 
     @ensure_postgis_connection
     @method_decorator(time_it)
@@ -512,7 +512,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 request, check, response_class=http.HttpAccepted)
         except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
                 GpkgLayerException) as e:
-            return self.get_err_response(request, e.message)
+            return self.get_err_response(request, e)
 
     @ensure_postgis_connection
     def publish(self, request, upload_id, layername, **kwargs):
@@ -543,7 +543,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
         try:
             upload = GpkgUpload.objects.get(pk=upload_id)
         except GpkgUpload.DoesNotExist as e:
-            return self.get_err_response(request, e.message, http.HttpNotFound)
+            return self.get_err_response(request, e, http.HttpNotFound)
         if 'publish_from_package' in get_perms(user, upload):
             manager = upload.data_manager
             package_layer = manager.get_layer_by_name(layername)
@@ -601,7 +601,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                     return self.get_err_response(
                         request, "Failed to Publish to Geonode")
             except Exception as e:
-                logger.error(e.message)
+                logger.error(e)
                 if tablename:
                     logger.error(
                         "DELETING Table {} from source".format(tablename))
@@ -610,7 +610,7 @@ class GpkgUploadResource(MultipartResource, BaseManagerResource):
                 if gs_layername and Layer.objects.filter(
                         alternate__icontains=gs_layername).count() == 0:
                     gs_pub.delete_layer(gs_layername)
-                return self.get_err_response(request, e.message)
+                return self.get_err_response(request, e)
 
 
 class ManagerDownloadResource(BaseManagerResource):
@@ -660,4 +660,4 @@ class ManagerDownloadResource(BaseManagerResource):
                 return response
 
         except Exception as e:
-            return self.get_err_response(request, e.message)
+            return self.get_err_response(request, e)
