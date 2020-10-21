@@ -18,7 +18,7 @@ class GpkgAuthorization(Authorization):
 
     def create_detail(self, object_list, bundle):
         return (bundle.obj.user == bundle.request.user
-                and not bundle.request.user.is_anonymous())
+                and not bundle.request.user.is_anonymous)
 
     def update_list(self, object_list, bundle):
         allowed = []

@@ -5,7 +5,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import FieldError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import formats
@@ -69,7 +69,7 @@ def get_compatible_layers(request, upload_id, layername):
         data = {"status": "success", "layers": layers}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-            GpkgLayerException), e:
+            GpkgLayerException) as e:
         data = {"status": False, "message": e.message}
         status = 404
     return JsonResponse(data, status=status)
@@ -102,7 +102,7 @@ def reload_layer(request, upload_id, layername, glayername):
         data = {"status": "success", "message": "Layer reloaded succesfully"}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-            GpkgLayerException), e:
+            GpkgLayerException) as e:
         data = {"status": "failed", "message": e.message}
         status = 404
     return JsonResponse(data, status=status)
@@ -210,7 +210,7 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
         data = {"status": "success", "compitable": check}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
-            GpkgLayerException), e:
+            GpkgLayerException) as e:
         data = {"status": "failed", "message": e.message}
         status = 404
     return JsonResponse(data, status=status)
@@ -286,7 +286,7 @@ def publish_layer(request, upload_id, layername, publish_name=None):
 
 
 def chunks(l, n):
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
 
 

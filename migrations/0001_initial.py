@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 import data_manager.models
 from django.conf import settings
+import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
                 ('package', models.FileField(upload_to=data_manager.models.package_path, validators=[data_manager.models.validate_file_extension])),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('user', models.ForeignKey(blank=True, to=settings.AUTH_USER_MODEL, null=True, on_delete=django.db.models.deletion.SET_NULL)),
             ],
             options={
                 'ordering': ['-uploaded_at'],
