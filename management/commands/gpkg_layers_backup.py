@@ -53,5 +53,5 @@ class Command(BaseCommand):
         except Exception as e:
             if backup_process and backup_process.is_alive():
                 backup_process.terminate()
-            print("\nFailed due to %s" % (e.message))
+            print("\nFailed due to %s" % (e))
             print('\n====== Backup Operation Failed :( ======')

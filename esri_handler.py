@@ -140,12 +140,12 @@ class EsriHandler(EsriDumper):
                     layer.CommitTransaction()
         except (StopIteration, EsriException, EsriFeatureLayerException,
                 ConnectionError) as e:
-            logger.debug(e.message)
+            logger.debug(e)
             if isinstance(e, EsriFeatureLayerException):
-                logger.info(e.message)
+                logger.info(e)
             if isinstance(e, EsriException):
                 layer = None
-            logger.error(e.message)
+            logger.error(e)
         finally:
             return gpkg_layer
 
@@ -173,7 +173,7 @@ class EsriHandler(EsriDumper):
                 try:
                     ags_layer.dump_sld_file()
                 except Exception as e:
-                    logger.error(e.message)
+                    logger.error(e)
                 sld_path = None
                 icon_paths = []
                 for file in os.listdir(tmp_dir):
@@ -211,6 +211,6 @@ class EsriHandler(EsriDumper):
                 gs_pub.remove_cached(geonode_layer.alternate)
 
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
         finally:
             return geonode_layer

@@ -64,13 +64,13 @@ def get_compatible_layers(request, upload_id, layername):
                 }
                 layers.append(lyr)
             except Exception as e:
-                logger.error(e.message)
+                logger.error(e)
 
         data = {"status": "success", "layers": layers}
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
             GpkgLayerException) as e:
-        data = {"status": False, "message": e.message}
+        data = {"status": False, "message": e}
         status = 404
     return JsonResponse(data, status=status)
 
@@ -103,7 +103,7 @@ def reload_layer(request, upload_id, layername, glayername):
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
             GpkgLayerException) as e:
-        data = {"status": "failed", "message": e.message}
+        data = {"status": "failed", "message": e}
         status = 404
     return JsonResponse(data, status=status)
 
@@ -211,7 +211,7 @@ def compare_to_geonode_layer(request, upload_id, layername, glayername):
         status = 200
     except (GpkgUpload.DoesNotExist, Layer.DoesNotExist,
             GpkgLayerException) as e:
-        data = {"status": "failed", "message": e.message}
+        data = {"status": "failed", "message": e}
         status = 404
     return JsonResponse(data, status=status)
 
@@ -267,7 +267,7 @@ def publish_layer(request, upload_id, layername, publish_name=None):
                         })
                 })
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
             if tablename:
                 logger.error("DELETING Table {} from source".format(tablename))
                 with manager.open_source(conn, True) as source:

@@ -10,6 +10,7 @@ from io import BytesIO
 import lxml
 import requests
 from django.conf import settings
+from django.contrib.gis.geos import Polygon
 from django.utils.translation import ugettext as _
 from geoserver.catalog import FailedRequestError
 
@@ -86,7 +87,7 @@ class GeoserverPublisher(object):
             cascading_delete(gs_catalog, "{}:{}".format(
                 self.workspace, layername))
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
 
     def upload_file(self, file, rel_path=ICON_REL_PATH):
         url = urljoin(self.base_url, "rest/", "resource", rel_path,
@@ -150,7 +151,7 @@ class GeoserverPublisher(object):
             gs_catalog.save(layer)
             saved = True
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
         return saved
 
     def remove_cached(self, typename):
@@ -165,7 +166,7 @@ class GeoserverPublisher(object):
                 pass
             logger.warning("Layer Cache Cleared")
         except BaseException as e:
-            logger.error(e.message)
+            logger.error(e)
 
 
 class GeonodePublisher(object):
@@ -176,7 +177,7 @@ class GeonodePublisher(object):
         try:
             self.store = get_store(gs_catalog, storename, workspace)
         except FailedRequestError as e:
-            logger.warning(e.message)
+            logger.warning(e)
             self.store = create_datastore(store_name=storename)
         self.storename = storename
         self.workspace = workspace
@@ -236,7 +237,7 @@ class GeonodePublisher(object):
                     gs_catalog.save(resource)
 
         except Exception as e:
-            logger.error(e.message)
+            logger.error(e)
             exception_type, error, traceback = sys.exc_info()
         else:
             if layer:
