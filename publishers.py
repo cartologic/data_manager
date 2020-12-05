@@ -209,14 +209,10 @@ class GeonodePublisher(object):
                     (resource.abstract or _('No abstract provided')),
                     "owner": self.owner,
                     "uuid": str(uuid.uuid4()),
-                    "bbox_polygon": Polygon.from_bbox((Decimal(resource.native_bbox[0]),
-                                                       Decimal(resource.native_bbox[2]),
-                                                       Decimal(resource.native_bbox[1]),
-                                                       Decimal(resource.native_bbox[3]))),
-                    # "bbox_x0": Decimal(resource.native_bbox[0]),
-                    # "bbox_x1": Decimal(resource.native_bbox[1]),
-                    # "bbox_y0": Decimal(resource.native_bbox[2]),
-                    # "bbox_y1": Decimal(resource.native_bbox[3]),
+                    "bbox_x0": Decimal(resource.native_bbox[0]),
+                    "bbox_x1": Decimal(resource.native_bbox[1]),
+                    "bbox_y0": Decimal(resource.native_bbox[2]),
+                    "bbox_y1": Decimal(resource.native_bbox[3]),
                     "srid": resource.projection
                 })
             logger.warning("=========> Settting permissions")
