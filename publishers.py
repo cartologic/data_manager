@@ -195,6 +195,7 @@ class GeonodePublisher(object):
         layer = None
         try:
             logger.warning("=========> Creating the Layer in Django")
+            bbox = [resource.native_bbox[0], resource.native_bbox[1], resource.native_bbox[2], resource.native_bbox[3]]
             layer, created = Layer.objects.get_or_create(
                 name=name,
                 workspace=workspace.name,
@@ -209,10 +210,7 @@ class GeonodePublisher(object):
                     (resource.abstract or _('No abstract provided')),
                     "owner": self.owner,
                     "uuid": str(uuid.uuid4()),
-                    "bbox_x0": Decimal(resource.native_bbox[0]),
-                    "bbox_x1": Decimal(resource.native_bbox[1]),
-                    "bbox_y0": Decimal(resource.native_bbox[2]),
-                    "bbox_y1": Decimal(resource.native_bbox[3]),
+                    "bbox_polygon": Polygon.from_bbox(bbox),
                     "srid": resource.projection
                 })
             logger.warning("=========> Settting permissions")
