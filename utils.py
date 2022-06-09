@@ -14,7 +14,7 @@ from django.utils.text import slugify
 from cartoview.app_manager.helpers import create_direcotry
 from geonode.geoserver.helpers import (get_store, gs_catalog,
                                        ogc_server_settings)
-from geonode.upload.utils import create_geoserver_db_featurestore
+from geonode.geoserver.helpers import create_geoserver_db_featurestore
 
 from .constants import _temp_dir
 
